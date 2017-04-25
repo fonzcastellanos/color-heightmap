@@ -1,0 +1,10 @@
+/**
+ * Created by alfonsocastellanos on 4/23/17.
+ */
+canvas {
+    border: 2px solid black;
+    background-color: black;
+}
+video {
+    display: none;
+}
