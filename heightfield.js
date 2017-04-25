@@ -3,6 +3,8 @@ var fileInput;
 var fileDisplayArea;
 var channelButton;
 var primitiveButton;
+var primitiveText;
+var colorChannelText;
 
 var mvMatrix;
 var shaderProgram;
@@ -29,13 +31,13 @@ const TRIANGLE_STRIPS = 0;
 const TRIANGLES = 1;
 const LINES = 2;
 const POINTS = 3;
-var currPrimitive = TRIANGLE_STRIPS;
+var currPrimitive;
 
 const NUM_CH = 3;
 const RED_CH = 0;
 const BLUE_CH = 1;
 const GREEN_CH = 2;
-var currChannel = RED_CH;
+var currChannel;
 
 var camController;
 
@@ -65,6 +67,14 @@ function start() {
         };
 
         fileDisplayArea = document.getElementById("fileDisplayArea");
+
+        primitiveText = document.getElementById("primitiveText");
+        primitiveText.innerHTML = "TRIANGLE_STRIP";
+        currPrimitive = TRIANGLE_STRIPS;
+
+        colorChannelText = document.getElementById("colorChannelText");
+        colorChannelText.innerHTML = "RED";
+        currChannel = RED_CH;
 
         fileInput = document.getElementById("fileInput");
         fileInput.addEventListener('change', readFile);
@@ -191,7 +201,17 @@ function readImage() {
  *********************************/
 
 function changeChannel() {
-    currChannel = (currChannel+1)%NUM_CH;
+    currChannel = (currChannel + 1) % NUM_CH;
+
+    if (currChannel === RED_CH) {
+        colorChannelText.innerHTML = "RED";
+    }
+    else if (currChannel === GREEN_CH) {
+        colorChannelText.innerHTML = "GREEN";
+    }
+    else if (currChannel === BLUE_CH) {
+        colorChannelText.innerHTML = "BLUE";
+    }
 
     loadVertices(imageWidth, imageHeight);
 
@@ -203,6 +223,19 @@ function changeChannel() {
 
 function changePrimitive() {
     currPrimitive = (currPrimitive+1)%NUM_PRIM;
+
+    if (currPrimitive === TRIANGLE_STRIPS) {
+        primitiveText.innerHTML = "TRIANGLE_STRIPS";
+    }
+    else if (currPrimitive === TRIANGLES) {
+        primitiveText.innerHTML = "TRIANGLES";
+    }
+    else if (currPrimitive === LINES) {
+        primitiveText.innerHTML = "LINES";
+    }
+    else if (currPrimitive === POINTS) {
+        primitiveText.innerHTML = "POINTS";
+    }
 
     bufferIndices();
 

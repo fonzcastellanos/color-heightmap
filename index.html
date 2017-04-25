@@ -33,6 +33,7 @@
       void main(void) {
         gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
         vColor = aVertexColor;
+        gl_PointSize = 2.0;
       }
     </script>
 </head>
@@ -43,7 +44,9 @@
 </canvas>
 <div>
     <button id="primitiveButton" type="button">Change geometric primitive</button>
+    <div id="primitiveText"></div>
     <button id="channelButton" type="button">Change color channel</button>
+    <div id="colorChannelText"></div>
 </div>
 <div>
     <input type="file" id="fileInput">
