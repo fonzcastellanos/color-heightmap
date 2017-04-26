@@ -1,4 +1,8 @@
 var gl;
+
+/**
+ * HTML Elements
+ */
 var fileInput;
 var fileDisplayArea;
 var channelButton;
@@ -6,12 +10,18 @@ var primitiveButton;
 var primitiveText;
 var colorChannelText;
 
+/**
+ * High-level pipeline objects
+ */
 var mvMatrix;
 var shaderProgram;
 var vertexPositionAttribute;
 var vertexColorAttribute;
 var perspectiveMatrix;
 
+/**
+ * Geometric data objects
+ */
 var vertices = [];
 var colors = [];
 var indicesTriStrip = [];
@@ -19,13 +29,22 @@ var indicesTri = [];
 var indicesLine = [];
 var indicesPoint = [];
 
+/**
+ * Buffers
+ */
 var vertexBuffer;
 var colorBuffer;
 var indexBuffer;
 
+/**
+ * Image width & height
+ */
 var imageWidth;
 var imageHeight;
 
+/**
+ * Primitive options
+ */
 const NUM_PRIM = 4;
 const TRIANGLE_STRIPS = 0;
 const TRIANGLES = 1;
@@ -33,21 +52,34 @@ const LINES = 2;
 const POINTS = 3;
 var currPrimitive;
 
+/**
+ * Channel options
+ */
 const NUM_CH = 3;
 const RED_CH = 0;
 const BLUE_CH = 1;
 const GREEN_CH = 2;
 var currChannel;
 
+/**
+ * Camera
+ */
 var camController;
 
-// bounding box
-var bbMin;
-var bbMax;
-
-// bounding sphere
+/**
+ * Bounding sphere
+ */
 var radius;
 var center;
+
+/**
+ * 32-bit uint index flag
+ */
+var uintForIndices;
+
+/**************
+ * Main method
+ **************/
 
 function start() {
     var canvas = document.getElementById("glCanvas");
@@ -55,6 +87,11 @@ function start() {
     initWebGL(canvas);
 
     if (gl) {
+        uintForIndices = gl.getExtension("OES_element_index_uint"); // attempt to enable 32-bit uint indices
+        if (!uintForIndices) {
+            alert("Unsuccessful at enabling the extension for 32-bit uint indices. Defaulting to 16-bit uint indices.");
+        }
+
         gl.clearColor(0.0, 0.0, 0.0, 1.0);
         gl.enable(gl.DEPTH_TEST);
 
@@ -88,19 +125,6 @@ function start() {
     }
 }
 
-function initWebGL(canvas) {
-    gl = null;
-
-    try {
-        gl = canvas.getContext("webgl");
-    }
-    catch(e) {}
-
-    if (!gl) {
-        alert("Unable to initialize WebGL. Your browser may not support it.");
-    }
-}
-
 /**********************
  *  Shader methods
  **********************/
@@ -115,7 +139,7 @@ function initShaders() {
     gl.linkProgram(shaderProgram);
 
     if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-        alert("Unable to initialize the shader program: " + gl.getProgramInfoLog(shader));
+        alert("Unable to initialize the shader program: " + gl.getProgramInfoLog(shaderProgram));
     }
 
     gl.useProgram(shaderProgram);
@@ -201,7 +225,7 @@ function readImage() {
  *********************************/
 
 function changeChannel() {
-    currChannel = (currChannel + 1) % NUM_CH;
+    currChannel = (currChannel+1) % NUM_CH;
 
     if (currChannel === RED_CH) {
         colorChannelText.innerHTML = "RED";
@@ -216,13 +240,14 @@ function changeChannel() {
     loadVertices(imageWidth, imageHeight);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, null, gl.DYNAMIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
 
     requestAnimationFrame(drawScene);
 }
 
 function changePrimitive() {
-    currPrimitive = (currPrimitive+1)%NUM_PRIM;
+    currPrimitive = (currPrimitive+1) % NUM_PRIM;
 
     if (currPrimitive === TRIANGLE_STRIPS) {
         primitiveText.innerHTML = "TRIANGLE_STRIPS";
@@ -243,8 +268,21 @@ function changePrimitive() {
 }
 
 /****************************
- * Data wrangling methods
+ * Initialization methods
  ****************************/
+
+function initWebGL(canvas) {
+    gl = null;
+
+    try {
+        gl = canvas.getContext("webgl");
+    }
+    catch(e) {}
+
+    if (!gl) {
+        alert("Unable to initialize WebGL. Your browser may not support it.");
+    }
+}
 
 function initHeightfield() {
     var width = this.width;
@@ -274,8 +312,8 @@ function initHeightfield() {
     }
 
     loadVertices(width, height);
-    getBoundingBox();
-    getBoundingSphere();
+
+    ritterBoundingSphere();
 
     loadTriStripIndices(width, height);
     loadTriIndices(width, height);
@@ -285,31 +323,6 @@ function initHeightfield() {
     bufferData();
 
     requestAnimationFrame(drawScene);
-}
-
-function getBoundingBox() {
-    bbMin = [Infinity, Infinity, Infinity];
-    bbMax = [-Infinity, -Infinity, -Infinity];
-
-    for (var i=0; i<vertices.length; i++) {
-        for (var j=0; j<3; j++) {
-            bbMin[j] = bbMin[j] > vertices[i+j] ? vertices[i+j] : bbMin[j];
-            bbMax[j] = bbMax[j] < vertices[i+j] ? vertices[i+j] : bbMax[j];
-        }
-    }
-}
-
-function getBoundingSphere() {
-    center = [];
-    for (var i=0; i<3; i++) {
-        center.push( (bbMax[i]+bbMin[i])/2.0 );
-    }
-
-    var sum = 0;
-    for (var i=0; i<3; i++) {
-        sum += Math.pow(bbMax[i] - center[i], 2);
-    }
-    radius = Math.sqrt(sum)/2.0;
 }
 
 function loadVertices(width, height) {
@@ -325,17 +338,17 @@ function loadVertices(width, height) {
 }
 
 function loadTriStripIndices(width, height) {
-    for (var y = 0; y < height - 1; y++) {
-        for (var x = 0; x < width; x++) {
-            var bL = x + y * width;
-            var tL = x + (y + 1) * width;
+    for (var y=0; y<height-1; y++) {
+        for (var x=0; x<width; x++) {
+            var bL = x + y*width;
+            var tL = x + (y+1)*width;
 
             indicesTriStrip.push(bL);
             indicesTriStrip.push(tL);
 
-            if (x === (width - 1)) {
+            if ( x === (width-1) ) {
                 indicesTriStrip.push(tL);
-                indicesTriStrip.push((y + 1) * width);
+                indicesTriStrip.push( (y+1) * width );
             }
         }
     }
@@ -393,6 +406,93 @@ function loadPointIndices(width, height) {
     }
 }
 
+/**************************************
+ * Ritter's bounding sphere algorithm
+ **************************************/
+
+function ritterBoundingSphere() {
+    var x = getVertex(0);
+    var y = largestDistFrom(x);
+    var z = largestDistFrom(y);
+
+    center = midpoint(y, z);
+    radius = Math.sqrt(distanceSqVertex(y, z))/2.0;
+    var radiusSq = Math.pow(radius, 2);
+
+    var outsideVertices = [];
+    for (var i=0; i<vertices.length; i+=3) {
+        var w = getVertex(i);
+        if (radiusSq < distanceSqVertex(w, center)) {
+            outsideVertices.push(w);
+        }
+    }
+
+    while (outsideVertices.length > 0) {
+        var ov = popVertex(outsideVertices);
+        var ovDistSq =  distanceSqVertex(ov, center);
+        if (ovDistSq > radiusSq) {
+            radiusSq = ovDistSq;
+        }
+    }
+    radius = Math.sqrt(radiusSq);
+}
+
+function popVertex(inVertices) {
+    var vertex = [];
+    for (var i=0; i<3; i++) {
+       vertex.push(inVertices.pop());
+    }
+    return vertex.reverse();
+}
+
+function midpoint(a, b) {
+    var z = [];
+    for (var i=0; i<3; i++) {
+        z.push( (a[i]+b[i])/2.0 );
+    }
+    return z;
+}
+
+
+function largestDistFrom(v) {
+    var maxDistSq = 0;
+    var vLargest;
+    for (var i=0; i<vertices.length; i+=3) {
+        var w = getVertex(i);
+        var distSq = distanceSqVertex(v, w);
+        if (maxDistSq < distSq) {
+            maxDistSq = distSq;
+            vLargest = w;
+        }
+    }
+    return vLargest;
+}
+
+function getVertex(index) {
+    var vertex = [];
+    for (var i=0; i<3; i++) {
+        vertex.push(vertices[index+i]);
+    }
+    return vertex;
+}
+
+function distanceSqVertex(a, b) {
+    var c = differenceVertex(a,b);
+    var sum = 0;
+    for (var i=0; i<3; i++) {
+        sum += Math.pow(c[i],2);
+    }
+    return sum;
+}
+
+function differenceVertex(a, b) {
+    var c = [];
+    for (var i=0; i<3; i++) {
+        c.push(a[i] - b[i]);
+    }
+    return c;
+}
+
 /******************
  * Buffer methods
  ******************/
@@ -414,10 +514,10 @@ function clearBufferData() {
 
 function bufferData() {
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.DYNAMIC_DRAW);
 
     bufferIndices()
 }
@@ -425,16 +525,37 @@ function bufferData() {
 function bufferIndices() {
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
     if (currPrimitive === TRIANGLE_STRIPS) {
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indicesTriStrip), gl.STATIC_DRAW);
+
+        if (uintForIndices) {
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(indicesTriStrip), gl.DYNAMIC_DRAW);
+        }
+        else {
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indicesTriStrip), gl.DYNAMIC_DRAW);
+        }
     }
     else if (currPrimitive === TRIANGLES) {
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indicesTri), gl.STATIC_DRAW);
+        if (uintForIndices) {
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(indicesTri), gl.DYNAMIC_DRAW);
+        }
+        else {
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indicesTri), gl.DYNAMIC_DRAW);
+        }
     }
     else if (currPrimitive === LINES){
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indicesLine), gl.STATIC_DRAW);
+        if (uintForIndices) {
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(indicesLine), gl.DYNAMIC_DRAW);
+        }
+        else {
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indicesLine), gl.DYNAMIC_DRAW);
+        }
     }
     else if (currPrimitive === POINTS) {
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indicesPoint), gl.STATIC_DRAW);
+        if (uintForIndices) {
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(indicesPoint), gl.DYNAMIC_DRAW);
+        }
+        else {
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indicesPoint), gl.DYNAMIC_DRAW);
+        }
     }
 }
 
@@ -445,11 +566,12 @@ function bufferIndices() {
 function drawScene() {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+    gl.viewport(0, 0, 640.0, 480.0);
     perspectiveMatrix = makePerspective(45.0, 640.0 / 480.0, 0.01, 10000.0);
 
     loadIdentity();
 
-    var eyeDistance = ( (bbMax[1] - bbMin[1])/2.0 ) / Math.tan(45.0/2.0*(Math.PI/180.0));
+    var eyeDistance = ( radius / Math.tan(45.0/2.0*(Math.PI/180.0)) );
     mvLookAt(center[0], center[1], center[2] - eyeDistance, center[0], center[1], center[2], 0, 1, 0);
 
     mvRotate(camController.xRot, [1, 0, 0]);
@@ -465,22 +587,42 @@ function drawScene() {
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
     if (currPrimitive === TRIANGLE_STRIPS) {
-        gl.drawElements(gl.TRIANGLE_STRIP, indicesTriStrip.length, gl.UNSIGNED_SHORT, 0);
+        if (uintForIndices) {
+            gl.drawElements(gl.TRIANGLE_STRIP, indicesTriStrip.length, gl.UNSIGNED_INT, 0);
+        }
+        else {
+            gl.drawElements(gl.TRIANGLE_STRIP, indicesTriStrip.length, gl.UNSIGNED_SHORT, 0);
+        }
     }
     else if (currPrimitive === TRIANGLES) {
-        gl.drawElements(gl.TRIANGLES, indicesTri.length, gl.UNSIGNED_SHORT, 0);
+        if (uintForIndices) {
+            gl.drawElements(gl.TRIANGLES, indicesTri.length, gl.UNSIGNED_INT, 0);
+        }
+        else {
+            gl.drawElements(gl.TRIANGLES, indicesTri.length, gl.UNSIGNED_SHORT, 0);
+        }
     }
     else if (currPrimitive === LINES) {
-        gl.drawElements(gl.LINES, indicesLine.length, gl.UNSIGNED_SHORT, 0);
+        if (uintForIndices) {
+            gl.drawElements(gl.LINES, indicesLine.length, gl.UNSIGNED_INT, 0);
+        }
+        else {
+            gl.drawElements(gl.LINES, indicesLine.length, gl.UNSIGNED_SHORT, 0);
+        }
     }
     else if (currPrimitive === POINTS) {
-        gl.drawElements(gl.POINTS, indicesPoint.length, gl.UNSIGNED_SHORT, 0);
+        if (uintForIndices) {
+            gl.drawElements(gl.POINTS, indicesPoint.length, gl.UNSIGNED_INT, 0);
+        }
+        else {
+            gl.drawElements(gl.POINTS, indicesPoint.length, gl.UNSIGNED_SHORT, 0);
+        }
     }
 }
 
-/****************************
+/************************
  Matrix utility methods
-*****************************/
+************************/
 
 function loadIdentity() {
     mvMatrix = Matrix.I(4);
