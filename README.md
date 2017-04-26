@@ -1,11 +1,9 @@
 # WebGL Image Heightfield
 
-<span style="padding-right:5px">
-<img src="heightfield.png" height=165 width=150>
-</span>
-<span style="padding-left:5px">
-<img src="grass.jpg" height=64 width=64>
-</span>
+
+<img src="heightfield.png" height=330 width=297>
+<img src="grass.jpg" height=128 width=128>
+
 
 Renders a heightfield for an input image. Height is a function of the chosen color channel level.
 
