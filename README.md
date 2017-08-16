@@ -2,6 +2,8 @@
 
 Renders a heightfield for an input image. Height is a function of the chosen color channel level.
 
+[Try here!](https://trulyfonz.github.io/webgl_heightfield/)
+
 Input Image                | Output Heightfield
 :-------------------------:|:-------------------------:
 ![](grass.jpg)  |  ![](heightfield.png)
