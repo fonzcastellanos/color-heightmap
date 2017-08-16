@@ -43,19 +43,19 @@ var imageHeight;
  * Primitive options
  */
 const NUM_PRIM = 4;
-const TRIANGLE_STRIPS = 1;
-const TRIANGLES = 2;
-const LINES = 3;
-const POINTS = 4;
+const TRIANGLE_STRIPS = 0;
+const TRIANGLES = 1;
+const LINES = 2;
+const POINTS = 3;
 var currPrimitive;
 
 /**
  * Channel options
  */
 const NUM_CH = 3;
-const RED_CH = 1;
-const GREEN_CH = 2;
-const BLUE_CH = 3;
+const RED_CH = 0;
+const GREEN_CH = 1;
+const BLUE_CH = 2;
 var currChannel;
 
 /**
@@ -193,11 +193,11 @@ function readFile() {
 
         if (geomPrimList.selectedIndex == 0) {
           currPrimitive = TRIANGLE_STRIPS;
-          geomPrimList.selectedIndex = TRIANGLE_STRIPS;
+          geomPrimList.selectedIndex = TRIANGLE_STRIPS+1;
         }
         if (colorChList.selectedIndex == 0) {
           currChannel = RED_CH;
-          colorChList.selectedIndex = RED_CH;
+          colorChList.selectedIndex = RED_CH+1;
         }
     }
 }
@@ -213,7 +213,7 @@ function readImage() {
  *********************************/
 
 function changeChannel() {
-    currChannel = colorChList.selectedIndex;
+    currChannel = colorChList.selectedIndex-1;
 
     loadVertices(imageWidth, imageHeight);
 
@@ -225,7 +225,7 @@ function changeChannel() {
 }
 
 function changePrim() {
-    currPrimitive = geomPrimList.selectedIndex;
+    currPrimitive = geomPrimList.selectedIndex-1;
     bufferIndices();
     requestAnimationFrame(drawScene);
 }
