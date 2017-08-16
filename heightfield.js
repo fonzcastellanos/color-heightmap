@@ -4,11 +4,8 @@ var gl;
  * HTML Elements
  */
 var fileInput;
-var fileDisplayArea;
-var channelButton;
-var primitiveButton;
-var primitiveText;
-var colorChannelText;
+var geomPrimList;
+var colorChList;
 
 /**
  * High-level pipeline objects
@@ -46,19 +43,19 @@ var imageHeight;
  * Primitive options
  */
 const NUM_PRIM = 4;
-const TRIANGLE_STRIPS = 0;
-const TRIANGLES = 1;
-const LINES = 2;
-const POINTS = 3;
+const TRIANGLE_STRIPS = 1;
+const TRIANGLES = 2;
+const LINES = 3;
+const POINTS = 4;
 var currPrimitive;
 
 /**
  * Channel options
  */
 const NUM_CH = 3;
-const RED_CH = 0;
-const BLUE_CH = 1;
+const RED_CH = 1;
 const GREEN_CH = 2;
+const BLUE_CH = 3;
 var currChannel;
 
 /**
@@ -103,25 +100,14 @@ function start() {
             requestAnimationFrame(drawScene);
         };
 
-        fileDisplayArea = document.getElementById("fileDisplayArea");
-
-        primitiveText = document.getElementById("primitiveText");
-        primitiveText.innerHTML = "TRIANGLE_STRIP";
-        currPrimitive = TRIANGLE_STRIPS;
-
-        colorChannelText = document.getElementById("colorChannelText");
-        colorChannelText.innerHTML = "RED";
-        currChannel = RED_CH;
-
         fileInput = document.getElementById("fileInput");
         fileInput.addEventListener('change', readFile);
 
-        channelButton = document.getElementById("channelButton");
-        channelButton.onclick = changeChannel;
+        geomPrimList = document.getElementById("geomPrimList");
+        geomPrimList.onchange = changePrim;
 
-        primitiveButton = document.getElementById("primitiveButton");
-        primitiveButton.onclick = changePrimitive;
-
+        colorChList = document.getElementById("colorChList");
+        colorChList.onchange = changeChannel;
     }
 }
 
@@ -204,20 +190,22 @@ function readFile() {
         var reader = new FileReader();
         reader.onload = readImage;
         reader.readAsDataURL(file);
-    }
-    else {
-        fileDisplayArea.innerHTML = "File not supported!"
+
+        if (geomPrimList.selectedIndex == 0) {
+          currPrimitive = TRIANGLE_STRIPS;
+          geomPrimList.selectedIndex = TRIANGLE_STRIPS;
+        }
+        if (colorChList.selectedIndex == 0) {
+          currChannel = RED_CH;
+          colorChList.selectedIndex = RED_CH;
+        }
     }
 }
 
 function readImage() {
-    fileDisplayArea.innerHTML = "";
-
     var image = new Image();
     image.onload = initHeightfield;
     image.src = this.result;
-
-    fileDisplayArea.appendChild(image);
 }
 
 /*********************************
@@ -225,17 +213,7 @@ function readImage() {
  *********************************/
 
 function changeChannel() {
-    currChannel = (currChannel+1) % NUM_CH;
-
-    if (currChannel === RED_CH) {
-        colorChannelText.innerHTML = "RED";
-    }
-    else if (currChannel === GREEN_CH) {
-        colorChannelText.innerHTML = "GREEN";
-    }
-    else if (currChannel === BLUE_CH) {
-        colorChannelText.innerHTML = "BLUE";
-    }
+    currChannel = colorChList.selectedIndex;
 
     loadVertices(imageWidth, imageHeight);
 
@@ -246,24 +224,9 @@ function changeChannel() {
     requestAnimationFrame(drawScene);
 }
 
-function changePrimitive() {
-    currPrimitive = (currPrimitive+1) % NUM_PRIM;
-
-    if (currPrimitive === TRIANGLE_STRIPS) {
-        primitiveText.innerHTML = "TRIANGLE_STRIPS";
-    }
-    else if (currPrimitive === TRIANGLES) {
-        primitiveText.innerHTML = "TRIANGLES";
-    }
-    else if (currPrimitive === LINES) {
-        primitiveText.innerHTML = "LINES";
-    }
-    else if (currPrimitive === POINTS) {
-        primitiveText.innerHTML = "POINTS";
-    }
-
+function changePrim() {
+    currPrimitive = geomPrimList.selectedIndex;
     bufferIndices();
-
     requestAnimationFrame(drawScene);
 }
 
