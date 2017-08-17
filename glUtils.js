@@ -1,6 +1,3 @@
-/**
- * Created by alfonsocastellanos on 4/23/17.
- */
 // augment Sylvester some
 Matrix.Translation = function (v)
 {
