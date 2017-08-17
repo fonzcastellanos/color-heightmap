@@ -1,4 +1,4 @@
-# WebGL Image Heightfield
+# Image Heightfield
 
 This web application renders the heightfield of an input image given a geometric primitive and a color channel, which represents the height
 
