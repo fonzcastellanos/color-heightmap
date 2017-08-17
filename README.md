@@ -10,6 +10,7 @@ Input Image                | Heightfield
 You can test the app at https://trulyfonz.github.io/webgl_heightfield/
 
 ## Features
+- Intuitive camera control with mouse
 - Maps a RGB color channel to height
 - Renders with various geometric primitives
   - Triangle strips
