@@ -35,5 +35,4 @@ Alfonso Castellanos
 MIT @ [Alfonso Castellanos](https://github.com/TrulyFonz)
 
 ## Acknowledgements
-- Professor Jernej Barbic for his [computer graphics class](http://www-bcf.usc.edu/~jbarbic/cs420-s17/)
-- Khronos Group and Google for their [camera controller module](https://github.com/KhronosGroup/WebGL/blob/master/sdk/demos/google/resources/cameracontroller.js)
+Khronos Group and Google for their [camera controller module](https://github.com/KhronosGroup/WebGL/blob/master/sdk/demos/google/resources/cameracontroller.js)
