@@ -7,7 +7,7 @@ Input Image                | Heightfield
 ![](grass.jpg)  |  ![](heightfield.png)
 
 ## Demo
-You can test the app at https://trulyfonz.github.io/image_heightfield/
+You can test the app at https://fonzcastellanos.github.io/image_heightfield/
 
 ## Features
 - Intuitive camera control with mouse
