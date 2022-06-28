@@ -1,24 +1,26 @@
+"use strict";
+
 var vertexShaderSrc = `
-attribute vec3 aVertexPosition;
-attribute vec4 aVertexColor;
+attribute vec3 position;
+attribute vec4 color;
 
-uniform mat4 uMVMatrix;
-uniform mat4 uPMatrix;
+uniform mat4 model_view;
+uniform mat4 projection;
 
-varying lowp vec4 vColor;
+varying lowp vec4 v_color;
 
 void main(void) {
-  gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
-  vColor = aVertexColor;
+  gl_Position = projection * model_view * vec4(position, 1.0);
+  v_color = color;
   gl_PointSize = 2.0;
 }
 `;
 
 var fragmentShaderSrc = `
-varying lowp vec4 vColor;
+varying lowp vec4 v_color;
 
 void main(void) {
-  gl_FragColor = vColor;
+  gl_FragColor = v_color;
 }
 `;
 
@@ -137,14 +139,14 @@ function initShaders() {
   const vs = compileShader(gl, vertexShaderSrc, gl.VERTEX_SHADER);
   const fs = compileShader(gl, fragmentShaderSrc, gl.FRAGMENT_SHADER);
 
-  program = createProgram(gl, fs, vs);
+  program = createProgram(gl, vs, fs);
 
   gl.useProgram(program);
 
-  vertexPositionAttribute = gl.getAttribLocation(program, "aVertexPosition");
+  vertexPositionAttribute = gl.getAttribLocation(program, "position");
   gl.enableVertexAttribArray(vertexPositionAttribute);
 
-  vertexColorAttribute = gl.getAttribLocation(program, "aVertexColor");
+  vertexColorAttribute = gl.getAttribLocation(program, "color");
   gl.enableVertexAttribArray(vertexColorAttribute);
 }
 
@@ -170,8 +172,8 @@ function createProgram(gl, vertexShader, fragmentShader) {
   }
 
   const errMsg = `Link failed: ${gl.getProgramInfoLog(prog)}\n` +
-    `Vertex shader info log: ${gl.getShaderInfoLog(vs)}\n` +
-    `Fragment shader info log: ${gl.getShaderInfoLog(fs)}\n`;
+    `Vertex shader info log: ${gl.getShaderInfoLog(vertexShader)}\n` +
+    `Fragment shader info log: ${gl.getShaderInfoLog(fragmentShader)}\n`;
 
   gl.deleteProgram(prog);
 
@@ -587,10 +589,10 @@ function mvTranslate(v) {
 }
 
 function setMatrixUniforms() {
-  var pUniform = gl.getUniformLocation(program, "uPMatrix");
+  var pUniform = gl.getUniformLocation(program, "projection");
   gl.uniformMatrix4fv(pUniform, false, new Float32Array(perspectiveMatrix.flatten()));
 
-  var mvUniform = gl.getUniformLocation(program, "uMVMatrix");
+  var mvUniform = gl.getUniformLocation(program, "model_view");
   gl.uniformMatrix4fv(mvUniform, false, new Float32Array(mvMatrix.flatten()));
 }
 
