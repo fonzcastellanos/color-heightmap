@@ -1,4 +1,28 @@
-var gl;
+var vertexShaderSrc = `
+attribute vec3 aVertexPosition;
+attribute vec4 aVertexColor;
+
+uniform mat4 uMVMatrix;
+uniform mat4 uPMatrix;
+
+varying lowp vec4 vColor;
+
+void main(void) {
+  gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+  vColor = aVertexColor;
+  gl_PointSize = 2.0;
+}
+`;
+
+var fragmentShaderSrc = `
+varying lowp vec4 vColor;
+
+void main(void) {
+  gl_FragColor = vColor;
+}
+`;
+
+var gl = null;
 
 /**
  * HTML Elements
@@ -11,7 +35,7 @@ var colorChList;
  * High-level pipeline objects
  */
 var mvMatrix;
-var shaderProgram;
+var program;
 var vertexPositionAttribute;
 var vertexColorAttribute;
 var perspectiveMatrix;
@@ -74,109 +98,85 @@ var center;
  */
 var uintForIndices;
 
-/**************
- * Main method
- **************/
+function main() {
+  const canvas = document.getElementById("gl-canvas");
 
-function start() {
-  var canvas = document.getElementById("glCanvas");
-
-  initWebGL(canvas);
-
-  if (gl) {
-    uintForIndices = gl.getExtension("OES_element_index_uint"); // attempt to enable 32-bit uint indices
-    if (!uintForIndices) {
-      alert("Unsuccessful at enabling the extension for 32-bit uint indices. Defaulting to 16-bit uint indices.");
-    }
-
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
-    gl.enable(gl.DEPTH_TEST);
-
-    initShaders();
-    initBuffers();
-
-    camController = new CameraController(canvas);
-    camController.onchange = function (xRot, yRot) {
-      requestAnimationFrame(drawScene);
-    };
-
-    fileInput = document.getElementById("fileInput");
-    fileInput.addEventListener('change', readFile);
-
-    geomPrimList = document.getElementById("geomPrimList");
-    geomPrimList.onchange = changePrim;
-
-    colorChList = document.getElementById("colorChList");
-    colorChList.onchange = changeChannel;
+  gl = canvas.getContext("webgl");
+  if (gl == null) {
+    alert("Unable to initialize WebGL. Your browser may not support it.");
+    return;
   }
+
+  uintForIndices = gl.getExtension("OES_element_index_uint"); // attempt to enable 32-bit uint indices
+  if (uintForIndices == null) {
+    alert("Unsuccessful at enabling the extension for 32-bit uint indices. Defaulting to 16-bit uint indices.");
+  }
+
+  gl.clearColor(0.0, 0.0, 0.0, 1.0);
+  gl.enable(gl.DEPTH_TEST);
+
+  initShaders();
+  initBuffers();
+
+  camController = new CameraController(canvas);
+  camController.onchange = function (xRot, yRot) {
+    requestAnimationFrame(drawScene);
+  };
+
+  fileInput = document.getElementById("fileInput");
+  fileInput.addEventListener('change', readFile);
+
+  geomPrimList = document.getElementById("geomPrimList");
+  geomPrimList.onchange = changePrim;
+
+  colorChList = document.getElementById("colorChList");
+  colorChList.onchange = changeChannel;
 }
 
-/**********************
- *  Shader methods
- **********************/
-
 function initShaders() {
-  var fragmentShader = getShader(gl, "shader-fs");
-  var vertexShader = getShader(gl, "shader-vs");
+  const vs = compileShader(gl, vertexShaderSrc, gl.VERTEX_SHADER);
+  const fs = compileShader(gl, fragmentShaderSrc, gl.FRAGMENT_SHADER);
 
-  shaderProgram = gl.createProgram();
-  gl.attachShader(shaderProgram, vertexShader);
-  gl.attachShader(shaderProgram, fragmentShader);
-  gl.linkProgram(shaderProgram);
+  program = createProgram(gl, fs, vs);
 
-  if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-    alert("Unable to initialize the shader program: " + gl.getProgramInfoLog(shaderProgram));
-  }
+  gl.useProgram(program);
 
-  gl.useProgram(shaderProgram);
-
-  vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+  vertexPositionAttribute = gl.getAttribLocation(program, "aVertexPosition");
   gl.enableVertexAttribArray(vertexPositionAttribute);
 
-  vertexColorAttribute = gl.getAttribLocation(shaderProgram, "aVertexColor");
+  vertexColorAttribute = gl.getAttribLocation(program, "aVertexColor");
   gl.enableVertexAttribArray(vertexColorAttribute);
 }
 
-function getShader(gl, id) {
-  var shaderScript = document.getElementById(id);
+function compileShader(gl, shaderSrc, shaderType) {
+  const shader = gl.createShader(shaderType);
 
-  if (!shaderScript) {
-    return null;
-  }
-
-  var theSource = "";
-  var currentChild = shaderScript.firstChild;
-
-  while (currentChild) {
-    if (currentChild.nodeType === 3) {
-      theSource += currentChild.textContent;
-    }
-
-    currentChild = currentChild.nextSibling;
-  }
-
-  var shader;
-
-  if (shaderScript.type === "x-shader/x-fragment") {
-    shader = gl.createShader(gl.FRAGMENT_SHADER);
-  } else if (shaderScript.type === "x-shader/x-vertex") {
-    shader = gl.createShader(gl.VERTEX_SHADER);
-  } else {
-    return null;  // Unknown shader type
-  }
-
-  gl.shaderSource(shader, theSource);
+  gl.shaderSource(shader, shaderSrc);
 
   gl.compileShader(shader);
-
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    alert("An error occurred compiling the shaders: " + gl.getShaderInfoLog(shader));
-    return null;
-  }
 
   return shader;
 }
 
+function createProgram(gl, vertexShader, fragmentShader) {
+  const prog = gl.createProgram();
+  gl.attachShader(prog, vertexShader);
+  gl.attachShader(prog, fragmentShader);
+  gl.linkProgram(prog);
+
+  const successful = gl.getProgramParameter(prog, gl.LINK_STATUS);
+  if (successful) {
+    return prog
+  }
+
+  const errMsg = `Link failed: ${gl.getProgramInfoLog(prog)}\n` +
+    `Vertex shader info log: ${gl.getShaderInfoLog(vs)}\n` +
+    `Fragment shader info log: ${gl.getShaderInfoLog(fs)}\n`;
+
+  gl.deleteProgram(prog);
+
+  throw errMsg;
+}
 
 /***************
  * I/O methods
@@ -233,19 +233,6 @@ function changePrim() {
 /****************************
  * Initialization methods
  ****************************/
-
-function initWebGL(canvas) {
-  gl = null;
-
-  try {
-    gl = canvas.getContext("webgl");
-  }
-  catch (e) { }
-
-  if (!gl) {
-    alert("Unable to initialize WebGL. Your browser may not support it.");
-  }
-}
 
 function initHeightfield() {
   var width = this.width;
@@ -600,10 +587,10 @@ function mvTranslate(v) {
 }
 
 function setMatrixUniforms() {
-  var pUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
+  var pUniform = gl.getUniformLocation(program, "uPMatrix");
   gl.uniformMatrix4fv(pUniform, false, new Float32Array(perspectiveMatrix.flatten()));
 
-  var mvUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
+  var mvUniform = gl.getUniformLocation(program, "uMVMatrix");
   gl.uniformMatrix4fv(mvUniform, false, new Float32Array(mvMatrix.flatten()));
 }
 

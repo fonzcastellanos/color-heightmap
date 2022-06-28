@@ -1,64 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>WebGL Heightfield</title>
-    <link rel="stylesheet" href="webgl.css">
-    <script src="sylvester.js"></script>
-    <script src="glUtils.js"></script>
-    <script src="cameracontroller.js"></script>
-    <script src="heightfield.js"></script>
 
-    <!-- Fragment shader program -->
-    <script id="shader-fs" type="x-shader/x-fragment">
-      varying lowp vec4 vColor;
+<head>
+  <title>WebGL Heightfield</title>
+  <link rel="stylesheet" href="webgl.css">
+  <script src="sylvester.js"></script>
+  <script src="glUtils.js"></script>
+  <script src="cameracontroller.js"></script>
+  <script src="heightfield.js"></script>
+</head>
 
-      void main(void) {
-        gl_FragColor = vColor;
-      }
-    </script>
+<body onload="main()">
+  <header>
+    <h1>WebGL Heightfield</h1>
+  </header>
+  <div>
+    <canvas id="gl-canvas" width="640" height="480">
+      Your browser doesn't appear to support the <code>&lt;canvas&gt;</code> element.
+    </canvas>
+  </div>
+  <div>
+    <select id="geomPrimList">
+      <option selected disabled>Geometric Primitives</option>
+      <option value=0>triangle strips</option>
+      <option value=1>triangles</option>
+      <option value=2>lines</option>
+      <option value=3>points</option>
+    </select>
+    <select id="colorChList">
+      <option selected disabled>Color Channel</option>
+      <option value=0>red</option>
+      <option value=1>green</option>
+      <option value=2>blue</option>
+    </select>
+    <input type="file" id="fileInput">
+  </div>
+</body>
 
-    <!-- Vertex shader program -->
-    <script id="shader-vs" type="x-shader/x-vertex">
-      attribute vec3 aVertexPosition;
-      attribute vec4 aVertexColor;
-
-      uniform mat4 uMVMatrix;
-      uniform mat4 uPMatrix;
-
-      varying lowp vec4 vColor;
-
-      void main(void) {
-        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
-        vColor = aVertexColor;
-        gl_PointSize = 2.0;
-      }
-    </script>
-  </head>
-
-  <body onload="start()">
-    <header>
-      <h1>WebGL Heightfield</h1>
-    </header>
-    <div>
-      <canvas id="glCanvas" width="640" height="480">
-        Your browser doesn't appear to support the <code>&lt;canvas&gt;</code> element.
-      </canvas>
-    </div>
-    <div>
-      <select id="geomPrimList">
-        <option selected disabled>Geometric Primitives</option>
-        <option value=0>triangle strips</option>
-        <option value=1>triangles</option>
-        <option value=2>lines</option>
-        <option value=3>points</option>
-      </select>
-      <select id="colorChList">
-        <option selected disabled>Color Channel</option>
-        <option value=0>red</option>
-        <option value=1>green</option>
-        <option value=2>blue</option>
-      </select>
-      <input type="file" id="fileInput">
-    </div>
-  </body>
 </html>
