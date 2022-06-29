@@ -142,11 +142,18 @@ function main() {
     requestAnimationFrame(drawScene);
   };
 
-  const imgFileReader = createImgFileReader();
-  const imgFileInput = document.getElementById("img-file-input");
-  imgFileInput.addEventListener("change", (evt) => {
-    const file = evt.target.files[0];
-    imgFileReader.readAsDataURL(file);
+  const img = new Image();
+  img.onload = initHeightfield;
+
+  const freader = new FileReader();
+  freader.onload = (evt) => {
+    img.src = evt.target.result;
+  };
+
+  const finput = document.getElementById("file-input");
+  finput.addEventListener("change", (evt) => {
+    const f = evt.target.files[0];
+    freader.readAsDataURL(f);
 
     if (geomPrimMenu.selectedIndex == 0) {
       currPrimitive = TRIANGLE_STRIPS;
@@ -204,16 +211,6 @@ function createProgram(gl, vertexShader, fragmentShader) {
   throw errMsg;
 }
 
-function createImgFileReader() {
-  const reader = new FileReader();
-  reader.onload = (evt) => {
-    const img = new Image();
-    img.onload = initHeightfield;
-    img.src = evt.target.result;
-  };
-  return reader;
-}
-
 /****************************
  * Initialization methods
  ****************************/
@@ -224,7 +221,7 @@ function initHeightfield() {
   imageWidth = width;
   imageHeight = height;
 
-  var canvas = document.createElement('canvas');
+  const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
 
@@ -236,8 +233,8 @@ function initHeightfield() {
   clearBufferData();
 
   // load colors
-  for (var y = 0; y < height; y++) {
-    for (var x = 0; x < width; x++) {
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
       var index = (y * width + x) * 4;
       for (var i = 0; i < 4; i++) {
         colors.push(imageData.data[index + i] / 255.0);
@@ -260,13 +257,13 @@ function initHeightfield() {
 }
 
 function loadVertices(width, height) {
-  vertices = [];
-  for (var y = 0; y < height; y++) {
-    for (var x = 0; x < width; x++) {
-      var index = (y * width + x) * 4;
-      vertices.push(x - width / 2.0);
-      vertices.push(colors[index + currChannel] * 255.0);
-      vertices.push(-(y - height / 2.0));
+  vertices = new Array(width * height * 3);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 3;
+      vertices[i] = x - width / 2.0;
+      vertices[i + 1] = colors[(y * width + x) * 4 + currChannel] * 255.0;
+      vertices[i + 2] = -(y - height / 2.0);
     }
   }
 }
