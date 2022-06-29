@@ -27,13 +27,6 @@ void main(void) {
 var gl = null;
 
 /**
- * HTML Elements
- */
-var fileInput;
-var geomPrimList;
-var colorChList;
-
-/**
  * High-level pipeline objects
  */
 var mvMatrix;
@@ -102,6 +95,10 @@ var uintForIndices;
 
 function main() {
   const canvas = document.getElementById("gl-canvas");
+  if (canvas == null) {
+    console.error("Failed to get canvas with id gl-canvas.");
+    return;
+  }
 
   gl = canvas.getContext("webgl");
   if (gl == null) {
@@ -125,14 +122,41 @@ function main() {
     requestAnimationFrame(drawScene);
   };
 
-  fileInput = document.getElementById("fileInput");
-  fileInput.addEventListener('change', readFile);
+  const geomPrimMenu = document.getElementById("geom-prim-menu");
+  geomPrimMenu.onchange = (evt) => {
+    currPrimitive = evt.target.selectedIndex - 1;
+    bufferIndices();
+    requestAnimationFrame(drawScene);
+  };
 
-  geomPrimList = document.getElementById("geomPrimList");
-  geomPrimList.onchange = changePrim;
+  const colorChMenu = document.getElementById("color-ch-menu");
+  colorChMenu.onchange = (evt) => {
+    currChannel = evt.target.selectedIndex - 1;
 
-  colorChList = document.getElementById("colorChList");
-  colorChList.onchange = changeChannel;
+    loadVertices(imageWidth, imageHeight);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, null, gl.DYNAMIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
+
+    requestAnimationFrame(drawScene);
+  };
+
+  const imgFileReader = createImgFileReader();
+  const imgFileInput = document.getElementById("img-file-input");
+  imgFileInput.addEventListener("change", (evt) => {
+    const file = evt.target.files[0];
+    imgFileReader.readAsDataURL(file);
+
+    if (geomPrimMenu.selectedIndex == 0) {
+      currPrimitive = TRIANGLE_STRIPS;
+      geomPrimMenu.selectedIndex = TRIANGLE_STRIPS + 1;
+    }
+    if (colorChMenu.selectedIndex == 0) {
+      currChannel = RED_CH;
+      colorChMenu.selectedIndex = RED_CH + 1;
+    }
+  });
 }
 
 function initShaders() {
@@ -180,56 +204,14 @@ function createProgram(gl, vertexShader, fragmentShader) {
   throw errMsg;
 }
 
-/***************
- * I/O methods
- ***************/
-
-function readFile() {
-  var file = fileInput.files[0];
-  var imgType = /image.*/;
-
-  if (file.type.match(imgType)) {
-    var reader = new FileReader();
-    reader.onload = readImage;
-    reader.readAsDataURL(file);
-
-    if (geomPrimList.selectedIndex == 0) {
-      currPrimitive = TRIANGLE_STRIPS;
-      geomPrimList.selectedIndex = TRIANGLE_STRIPS + 1;
-    }
-    if (colorChList.selectedIndex == 0) {
-      currChannel = RED_CH;
-      colorChList.selectedIndex = RED_CH + 1;
-    }
-  }
-}
-
-function readImage() {
-  var image = new Image();
-  image.onload = initHeightfield;
-  image.src = this.result;
-}
-
-/*********************************
- * Channel and primitive methods
- *********************************/
-
-function changeChannel() {
-  currChannel = colorChList.selectedIndex - 1;
-
-  loadVertices(imageWidth, imageHeight);
-
-  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, null, gl.DYNAMIC_DRAW);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
-
-  requestAnimationFrame(drawScene);
-}
-
-function changePrim() {
-  currPrimitive = geomPrimList.selectedIndex - 1;
-  bufferIndices();
-  requestAnimationFrame(drawScene);
+function createImgFileReader() {
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    const img = new Image();
+    img.onload = initHeightfield;
+    img.src = evt.target.result;
+  };
+  return reader;
 }
 
 /****************************
