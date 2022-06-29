@@ -1,17 +1,17 @@
 "use strict";
 
 var vertexShaderSrc = `
-attribute vec3 position;
-attribute vec4 color;
+attribute vec3 a_position;
+attribute vec4 a_color;
 
-uniform mat4 model_view;
-uniform mat4 projection;
+uniform mat4 u_model_view;
+uniform mat4 u_projection;
 
 varying lowp vec4 v_color;
 
 void main(void) {
-  gl_Position = projection * model_view * vec4(position, 1.0);
-  v_color = color;
+  gl_Position = u_projection * u_model_view * vec4(a_position, 1.0);
+  v_color = a_color;
   gl_PointSize = 2.0;
 }
 `;
@@ -31,8 +31,8 @@ var gl = null;
  */
 var mvMatrix;
 var program;
-var vertexPositionAttribute;
-var vertexColorAttribute;
+var positionAttribLoc;
+var colorAttribLoc;
 var perspectiveMatrix;
 
 /**
@@ -102,19 +102,29 @@ function main() {
 
   gl = canvas.getContext("webgl");
   if (gl == null) {
-    alert("Unable to initialize WebGL. Your browser may not support it.");
+    console.error("Failed to to initialize WebGL. Executing browser may not support it.");
     return;
   }
 
   uintForIndices = gl.getExtension("OES_element_index_uint"); // attempt to enable 32-bit uint indices
   if (uintForIndices == null) {
-    alert("Unsuccessful at enabling the extension for 32-bit uint indices. Defaulting to 16-bit uint indices.");
+    console.log("Unsuccessful at enabling the extension for 32-bit uint indices. Defaulting to 16-bit uint indices.");
   }
 
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   gl.enable(gl.DEPTH_TEST);
 
-  initShaders();
+  const vs = compileShader(gl, vertexShaderSrc, gl.VERTEX_SHADER);
+  const fs = compileShader(gl, fragmentShaderSrc, gl.FRAGMENT_SHADER);
+  program = createProgram(gl, vs, fs);
+  gl.useProgram(program);
+
+  positionAttribLoc = gl.getAttribLocation(program, "a_position");
+  gl.enableVertexAttribArray(positionAttribLoc);
+
+  colorAttribLoc = gl.getAttribLocation(program, "a_color");
+  gl.enableVertexAttribArray(colorAttribLoc);
+
   initBuffers();
 
   camController = new CameraController(canvas);
@@ -166,21 +176,6 @@ function main() {
   });
 }
 
-function initShaders() {
-  const vs = compileShader(gl, vertexShaderSrc, gl.VERTEX_SHADER);
-  const fs = compileShader(gl, fragmentShaderSrc, gl.FRAGMENT_SHADER);
-
-  program = createProgram(gl, vs, fs);
-
-  gl.useProgram(program);
-
-  vertexPositionAttribute = gl.getAttribLocation(program, "position");
-  gl.enableVertexAttribArray(vertexPositionAttribute);
-
-  vertexColorAttribute = gl.getAttribLocation(program, "color");
-  gl.enableVertexAttribArray(vertexColorAttribute);
-}
-
 function compileShader(gl, shaderSrc, shaderType) {
   const shader = gl.createShader(shaderType);
 
@@ -219,40 +214,39 @@ function getImgData(img) {
   canvas.width = w;
   canvas.height = h;
 
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext("2d");
   ctx.drawImage(img, 0, 0);
 
   return ctx.getImageData(0, 0, w, h);
 }
 
 function initHeightfield() {
-  var width = this.width;
-  var height = this.height;
-  imgWidth = width;
-  imgHeight = height;
+  const w = this.width;
+  const h = this.height;
+  imgWidth = w;
+  imgHeight = h;
 
   const imgData = getImgData(this);
 
-  clearBufferData();
-
-  colors = new Array(width * height);
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      let base = (y * width + x) * 4;
-      for (let offset = 0; offset < 4; offset++) {
-        colors[base + offset] = imgData.data[base + offset] / 255.0;
+  colors = new Array(w * h);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const offset = (y * w + x) * 4;
+      for (let i = 0; i < 4; i++) {
+        const j = offset + i;
+        colors[j] = imgData.data[j] / 255.0;
       }
     }
   }
 
-  vertices = createVertices(width, height, colors);
+  vertices = createVertices(w, h, colors);
 
   ritterBoundingSphere(vertices);
 
-  indicesTriStrip = createTriStripIndices(width, height);
-  indicesTri = createTriIndices(width, height);
-  indicesLine = createLineIndices(width, height);
-  indicesPoint = createPointIndices(width, height);
+  indicesTriStrip = createTriStripIndices(w, h);
+  indicesTri = createTriIndices(w, h);
+  indicesLine = createLineIndices(w, h);
+  indicesPoint = createPointIndices(w, h);
 
   bufferData(vertices, colors);
 
@@ -273,17 +267,17 @@ function createVertices(w, h, colors) {
 }
 
 function createTriStripIndices(w, h) {
-  let res = [];
+  const res = [];
   for (let y = 0; y < h - 1; y++) {
     for (let x = 0; x < w; x++) {
-      let bL = x + y * w;
-      let tL = x + (y + 1) * w;
+      const botLeft = x + y * w;
+      const topLeft = x + (y + 1) * w;
 
-      res.push(bL);
-      res.push(tL);
+      res.push(botLeft);
+      res.push(topLeft);
 
       if (x === (w - 1)) {
-        res.push(tL);
+        res.push(topLeft);
         res.push((y + 1) * w);
       }
     }
@@ -292,7 +286,7 @@ function createTriStripIndices(w, h) {
 }
 
 function createTriIndices(w, h) {
-  let res = [];
+  const res = [];
   for (let y = 0; y < h - 1; y++) {
     for (let x = 0; x < w - 1; x++) {
       const botLeft = x + y * w;
@@ -312,7 +306,7 @@ function createTriIndices(w, h) {
 }
 
 function createLineIndices(w, h) {
-  let res = [];
+  const res = [];
   for (let y = 0; y < h - 1; y++) {
     for (let x = 0; x < w - 1; x++) {
       const botLeft = x + y * w;
@@ -354,17 +348,17 @@ function createPointIndices(w, h) {
  **************************************/
 
 function ritterBoundingSphere(vertices) {
-  let x = getVertex(vertices, 0);
-  let y = largestDistFrom(x, vertices);
-  let z = largestDistFrom(y, vertices);
+  const x = getVertex(vertices, 0);
+  const y = largestDistFrom(x, vertices);
+  const z = largestDistFrom(y, vertices);
 
   center = midpoint(y, z);
   radius = Math.sqrt(distSq(y, z)) / 2.0;
   let radiusSq = Math.pow(radius, 2);
 
-  var outsideVertices = [];
-  for (var i = 0; i < vertices.length; i += 3) {
-    var w = getVertex(vertices, i);
+  const outsideVertices = [];
+  for (let i = 0; i < vertices.length; i += 3) {
+    const w = getVertex(vertices, i);
     if (radiusSq < distSq(w, center)) {
       outsideVertices.push(w);
     }
@@ -381,15 +375,15 @@ function ritterBoundingSphere(vertices) {
 }
 
 function popVertex(inVertices) {
-  var vertex = [];
-  for (var i = 0; i < 3; i++) {
+  const vertex = [];
+  for (let i = 0; i < 3; i++) {
     vertex.push(inVertices.pop());
   }
   return vertex.reverse();
 }
 
 function midpoint(a, b) {
-  let z = new Array(3);
+  const z = new Array(3);
   for (let i = 0; i < 3; i++) {
     z[i] = (a[i] + b[i]) / 2.0;
   }
@@ -444,15 +438,6 @@ function initBuffers() {
   vertexBuffer = gl.createBuffer();
   colorBuffer = gl.createBuffer();
   indexBuffer = gl.createBuffer();
-}
-
-function clearBufferData() {
-  vertices = [];
-  colors = [];
-  indicesTriStrip = [];
-  indicesTri = [];
-  indicesLine = [];
-  indicesPoint = [];
 }
 
 function bufferData(vertices, colors) {
@@ -520,10 +505,10 @@ function drawScene() {
   mvRotate(camController.yRot, [0, 1, 0]);
 
   gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-  gl.vertexAttribPointer(vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
+  gl.vertexAttribPointer(positionAttribLoc, 3, gl.FLOAT, false, 0, 0);
 
   gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-  gl.vertexAttribPointer(vertexColorAttribute, 4, gl.FLOAT, false, 0, 0);
+  gl.vertexAttribPointer(colorAttribLoc, 4, gl.FLOAT, false, 0, 0);
 
   setMatrixUniforms();
 
@@ -579,10 +564,10 @@ function mvTranslate(v) {
 }
 
 function setMatrixUniforms() {
-  var pUniform = gl.getUniformLocation(program, "projection");
+  var pUniform = gl.getUniformLocation(program, "u_projection");
   gl.uniformMatrix4fv(pUniform, false, new Float32Array(perspectiveMatrix.flatten()));
 
-  var mvUniform = gl.getUniformLocation(program, "model_view");
+  var mvUniform = gl.getUniformLocation(program, "u_model_view");
   gl.uniformMatrix4fv(mvUniform, false, new Float32Array(mvMatrix.flatten()));
 }
 
