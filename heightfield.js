@@ -55,8 +55,8 @@ var indexBuffer;
 /**
  * Image width & height
  */
-var imageWidth;
-var imageHeight;
+var imgWidth;
+var imgHeight;
 
 /**
  * Primitive options
@@ -133,7 +133,7 @@ function main() {
   colorChMenu.onchange = (evt) => {
     currChannel = evt.target.selectedIndex - 1;
 
-    loadVertices(imageWidth, imageHeight);
+    vertices = createVertices(imageWidth, imageHeight, colors);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, null, gl.DYNAMIC_DRAW);
@@ -143,12 +143,12 @@ function main() {
   };
 
   const img = new Image();
-  img.onload = initHeightfield;
+  img.addEventListener("load", initHeightfield);
 
   const freader = new FileReader();
-  freader.onload = (evt) => {
+  freader.addEventListener("load", (evt) => {
     img.src = evt.target.result;
-  };
+  });
 
   const finput = document.getElementById("file-input");
   finput.addEventListener("change", (evt) => {
@@ -197,8 +197,8 @@ function createProgram(gl, vertexShader, fragmentShader) {
   gl.attachShader(prog, fragmentShader);
   gl.linkProgram(prog);
 
-  const successful = gl.getProgramParameter(prog, gl.LINK_STATUS);
-  if (successful) {
+  const ok = gl.getProgramParameter(prog, gl.LINK_STATUS);
+  if (ok) {
     return prog
   }
 
@@ -211,156 +211,168 @@ function createProgram(gl, vertexShader, fragmentShader) {
   throw errMsg;
 }
 
-/****************************
- * Initialization methods
- ****************************/
+function getImgData(img) {
+  const w = img.width;
+  const h = img.height;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0);
+
+  return ctx.getImageData(0, 0, w, h);
+}
 
 function initHeightfield() {
   var width = this.width;
   var height = this.height;
-  imageWidth = width;
-  imageHeight = height;
+  imgWidth = width;
+  imgHeight = height;
 
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-
-  var context = canvas.getContext('2d');
-  context.drawImage(this, 0, 0);
-
-  var imageData = context.getImageData(0, 0, width, height);
+  const imgData = getImgData(this);
 
   clearBufferData();
 
-  // load colors
+  colors = new Array(width * height);
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
-      var index = (y * width + x) * 4;
-      for (var i = 0; i < 4; i++) {
-        colors.push(imageData.data[index + i] / 255.0);
+      let base = (y * width + x) * 4;
+      for (let offset = 0; offset < 4; offset++) {
+        colors[base + offset] = imgData.data[base + offset] / 255.0;
       }
     }
   }
 
-  loadVertices(width, height);
+  vertices = createVertices(width, height, colors);
 
-  ritterBoundingSphere();
+  ritterBoundingSphere(vertices);
 
-  loadTriStripIndices(width, height);
-  loadTriIndices(width, height);
-  loadLineIndices(width, height);
-  loadPointIndices(width, height);
+  indicesTriStrip = createTriStripIndices(width, height);
+  indicesTri = createTriIndices(width, height);
+  indicesLine = createLineIndices(width, height);
+  indicesPoint = createPointIndices(width, height);
 
-  bufferData();
+  bufferData(vertices, colors);
 
   requestAnimationFrame(drawScene);
 }
 
-function loadVertices(width, height) {
-  vertices = new Array(width * height * 3);
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const i = (y * width + x) * 3;
-      vertices[i] = x - width / 2.0;
-      vertices[i + 1] = colors[(y * width + x) * 4 + currChannel] * 255.0;
-      vertices[i + 2] = -(y - height / 2.0);
+function createVertices(w, h, colors) {
+  const res = new Array(w * h * 3);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 3;
+      res[i] = x - w / 2.0;
+      res[i + 1] = colors[(y * w + x) * 4 + currChannel] * 255.0;
+      res[i + 2] = -(y - h / 2.0);
     }
   }
+  return res;
 }
 
-function loadTriStripIndices(width, height) {
-  for (var y = 0; y < height - 1; y++) {
-    for (var x = 0; x < width; x++) {
-      var bL = x + y * width;
-      var tL = x + (y + 1) * width;
+function createTriStripIndices(w, h) {
+  let res = [];
+  for (let y = 0; y < h - 1; y++) {
+    for (let x = 0; x < w; x++) {
+      let bL = x + y * w;
+      let tL = x + (y + 1) * w;
 
-      indicesTriStrip.push(bL);
-      indicesTriStrip.push(tL);
+      res.push(bL);
+      res.push(tL);
 
-      if (x === (width - 1)) {
-        indicesTriStrip.push(tL);
-        indicesTriStrip.push((y + 1) * width);
+      if (x === (w - 1)) {
+        res.push(tL);
+        res.push((y + 1) * w);
       }
     }
   }
+  return res
 }
 
-function loadTriIndices(width, height) {
-  for (var y = 0; y < height - 1; y++) {
-    for (var x = 0; x < width - 1; x++) {
-      var bL = x + y * width;
-      var bR = (x + 1) + y * width;
-      var tL = x + (y + 1) * width;
-      var tR = (x + 1) + (y + 1) * width;
+function createTriIndices(w, h) {
+  let res = [];
+  for (let y = 0; y < h - 1; y++) {
+    for (let x = 0; x < w - 1; x++) {
+      const botLeft = x + y * w;
+      const botRight = (x + 1) + y * w;
+      const topLeft = x + (y + 1) * w;
+      const topRight = (x + 1) + (y + 1) * w;
 
-      indicesTri.push(tL);
-      indicesTri.push(tR);
-      indicesTri.push(bL);
-      indicesTri.push(tR);
-      indicesTri.push(bR);
-      indicesTri.push(bL);
+      res.push(topLeft);
+      res.push(topRight);
+      res.push(botLeft);
+      res.push(topRight);
+      res.push(botRight);
+      res.push(botLeft);
     }
   }
+  return res;
 }
 
-function loadLineIndices(width, height) {
-  for (var y = 0; y < height - 1; y++) {
-    for (var x = 0; x < width - 1; x++) {
-      var bL = x + y * width;
-      var bR = (x + 1) + y * width;
-      var tL = x + (y + 1) * width;
-      var tR = (x + 1) + (y + 1) * width;
+function createLineIndices(w, h) {
+  let res = [];
+  for (let y = 0; y < h - 1; y++) {
+    for (let x = 0; x < w - 1; x++) {
+      const botLeft = x + y * w;
+      const botRight = (x + 1) + y * w;
+      const topLeft = x + (y + 1) * w;
+      const topRight = (x + 1) + (y + 1) * w;
 
-      indicesLine.push(tL);
-      indicesLine.push(tR);
+      res.push(topLeft);
+      res.push(topRight);
 
-      indicesLine.push(tR);
-      indicesLine.push(bL);
+      res.push(topRight);
+      res.push(botLeft);
 
-      indicesLine.push(bL);
-      indicesLine.push(tL);
+      res.push(botLeft);
+      res.push(topLeft);
 
-      indicesLine.push(tR);
-      indicesLine.push(bR);
+      res.push(topRight);
+      res.push(botRight);
 
-      indicesLine.push(bR);
-      indicesLine.push(bL);
+      res.push(botRight);
+      res.push(botLeft);
     }
   }
+  return res;
 }
 
-function loadPointIndices(width, height) {
-  for (var y = 0; y < height; y++) {
-    for (var x = 0; x < width; x++) {
-      indicesPoint.push(x + y * width);
+function createPointIndices(w, h) {
+  const res = new Array(w * h);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      res[y * w + x] = y * w + x;
     }
   }
+  return res;
 }
 
 /**************************************
  * Ritter's bounding sphere algorithm
  **************************************/
 
-function ritterBoundingSphere() {
-  var x = getVertex(0);
-  var y = largestDistFrom(x);
-  var z = largestDistFrom(y);
+function ritterBoundingSphere(vertices) {
+  let x = getVertex(vertices, 0);
+  let y = largestDistFrom(x, vertices);
+  let z = largestDistFrom(y, vertices);
 
   center = midpoint(y, z);
-  radius = Math.sqrt(distanceSqVertex(y, z)) / 2.0;
-  var radiusSq = Math.pow(radius, 2);
+  radius = Math.sqrt(distSq(y, z)) / 2.0;
+  let radiusSq = Math.pow(radius, 2);
 
   var outsideVertices = [];
   for (var i = 0; i < vertices.length; i += 3) {
-    var w = getVertex(i);
-    if (radiusSq < distanceSqVertex(w, center)) {
+    var w = getVertex(vertices, i);
+    if (radiusSq < distSq(w, center)) {
       outsideVertices.push(w);
     }
   }
 
   while (outsideVertices.length > 0) {
     var ov = popVertex(outsideVertices);
-    var ovDistSq = distanceSqVertex(ov, center);
+    var ovDistSq = distSq(ov, center);
     if (ovDistSq > radiusSq) {
       radiusSq = ovDistSq;
     }
@@ -377,51 +389,51 @@ function popVertex(inVertices) {
 }
 
 function midpoint(a, b) {
-  var z = [];
-  for (var i = 0; i < 3; i++) {
-    z.push((a[i] + b[i]) / 2.0);
+  let z = new Array(3);
+  for (let i = 0; i < 3; i++) {
+    z[i] = (a[i] + b[i]) / 2.0;
   }
   return z;
 }
 
 
-function largestDistFrom(v) {
-  var maxDistSq = 0;
-  var vLargest;
-  for (var i = 0; i < vertices.length; i += 3) {
-    var w = getVertex(i);
-    var distSq = distanceSqVertex(v, w);
-    if (maxDistSq < distSq) {
-      maxDistSq = distSq;
+function largestDistFrom(v, vertices) {
+  let maxDistSq = 0;
+  let vLargest;
+  for (let i = 0; i < vertices.length; i += 3) {
+    let w = getVertex(vertices, i);
+    let dSq = distSq(v, w);
+    if (maxDistSq < dSq) {
+      maxDistSq = dSq;
       vLargest = w;
     }
   }
   return vLargest;
 }
 
-function getVertex(index) {
-  var vertex = [];
-  for (var i = 0; i < 3; i++) {
-    vertex.push(vertices[index + i]);
+function getVertex(vertices, idx) {
+  const v = new Array(3);
+  for (let i = 0; i < 3; i++) {
+    v[i] = vertices[idx + i];
   }
-  return vertex;
+  return v;
 }
 
-function distanceSqVertex(a, b) {
-  var c = differenceVertex(a, b);
-  var sum = 0;
-  for (var i = 0; i < 3; i++) {
-    sum += Math.pow(c[i], 2);
+function distSq(va, vb) {
+  const vdiff = diff(va, vb);
+  let res = 0;
+  for (const component of vdiff) {
+    res += Math.pow(component, 2);
   }
-  return sum;
+  return res;
 }
 
-function differenceVertex(a, b) {
-  var c = [];
-  for (var i = 0; i < 3; i++) {
-    c.push(a[i] - b[i]);
+function diff(va, vb) {
+  const d = new Array(3);
+  for (let i = 0; i < 3; i++) {
+    d[i] = va[i] - vb[i];
   }
-  return c;
+  return d;
 }
 
 /******************
@@ -443,7 +455,7 @@ function clearBufferData() {
   indicesPoint = [];
 }
 
-function bufferData() {
+function bufferData(vertices, colors) {
   gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
 
@@ -456,7 +468,6 @@ function bufferData() {
 function bufferIndices() {
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
   if (currPrimitive === TRIANGLE_STRIPS) {
-
     if (uintForIndices) {
       gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(indicesTriStrip), gl.DYNAMIC_DRAW);
     }
