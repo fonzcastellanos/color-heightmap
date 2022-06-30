@@ -36,10 +36,10 @@ var perspectiveMatrix;
 var radius;
 var center;
 
-function glPrimitive(gl, selectPrimitive) {
-  switch (selectPrimitive) {
+function glPrimitive(gl, selectedPrimitive) {
+  switch (selectedPrimitive) {
     case "triangle-strips":
-      return gl.TRIANGLE_STRIPS;
+      return gl.TRIANGLE_STRIP;
     case "triangles":
       return gl.TRIANGLES;
     case "lines":
@@ -125,7 +125,7 @@ function main() {
 
       gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
       // gl.bufferData(gl.ARRAY_BUFFER, null, gl.DYNAMIC_DRAW);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.DYNAMIC_DRAW);
+      gl.bufferData(gl.ARRAY_BUFFER, positions, gl.DYNAMIC_DRAW);
 
       requestAnimationFrame(() => {
         drawScene(gl, extOesElementIndexUint, program, positionAttribLoc, colorAttribLoc, positionBuffer, colorBuffer, indexBuffer, camController, selectedPrimitive, indices);
@@ -138,17 +138,17 @@ function main() {
   img.addEventListener("load", (evt) => {
     imgData = getImgData(evt.target);
     colors = createColors(imgData);
+
     positions = createPositions(imgData.width, imgData.height, colors, selectedColorChannel);
     indices = createIndices(imgData.width, imgData.height, selectedPrimitive);
-
 
     ritterBoundingSphere(positions);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.DYNAMIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.DYNAMIC_DRAW);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.DYNAMIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, colors, gl.DYNAMIC_DRAW);
 
     const typedIndices = extOesElementIndexUint ? new Uint32Array(indices) : new Uint16Array(indices);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
@@ -217,23 +217,20 @@ function createIndices(w, h, selectedPrimitive) {
 }
 
 function getImgData(img) {
-  const w = img.width;
-  const h = img.height;
-
   const canvas = document.createElement("canvas");
-  canvas.width = w;
-  canvas.height = h;
+  canvas.width = img.width;
+  canvas.height = img.height;
 
   const ctx = canvas.getContext("2d");
   ctx.drawImage(img, 0, 0);
 
-  return ctx.getImageData(0, 0, w, h);
+  return ctx.getImageData(0, 0, img.width, img.height);
 }
 
 function createColors(imgData) {
   const w = imgData.width;
   const h = imgData.height;
-  const res = new Array(w * h);
+  const res = new Float32Array(w * h * 4);
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const offset = (y * w + x) * 4;
@@ -262,7 +259,7 @@ function createPositions(w, h, colors, colorChannel) {
       throw "invalid color channel"
   }
 
-  const res = new Array(w * h * 3);
+  const res = new Float32Array(w * h * 3);
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const i = (y * w + x) * 3;
@@ -275,6 +272,7 @@ function createPositions(w, h, colors, colorChannel) {
 }
 
 function createTriStripIndices(w, h) {
+  // const res = new Array(w * (h - 1) * 2 + 2);
   const res = [];
   for (let y = 0; y < h - 1; y++) {
     for (let x = 0; x < w; x++) {
