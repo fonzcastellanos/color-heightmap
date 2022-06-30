@@ -20,18 +20,18 @@
     </canvas>
   </div>
   <div>
-    <select id="geom-prim-menu">
-      <option selected disabled>Geometric Primitives</option>
-      <option value=0>triangle strips</option>
-      <option value=1>triangles</option>
-      <option value=2>lines</option>
-      <option value=3>points</option>
+    <label for="geometric-primitive-select">Geometric Primitive</label>
+    <select id="geometric-primitive-select">
+      <option value="triangle-strips" selected>triangle strips</option>
+      <option value="triangles">triangles</option>
+      <option value="lines">lines</option>
+      <option value="points">points</option>
     </select>
-    <select id="color-ch-menu">
-      <option selected disabled>Color Channel</option>
-      <option value=0>red</option>
-      <option value=1>green</option>
-      <option value=2>blue</option>
+    <label for="color-channel-select">Color Channel</label>
+    <select id="color-channel-select">
+      <option value="red">red</option>
+      <option value="green">green</option>
+      <option value="blue">blue</option>
     </select>
     <input type="file" id="file-input">
   </div>
