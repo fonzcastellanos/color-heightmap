@@ -24,78 +24,17 @@ void main(void) {
 }
 `;
 
-// var gl = null;
-
 /**
  * High-level pipeline objects
  */
 var mvMatrix;
-// var program;
-// var positionAttribLoc;
-// var colorAttribLoc;
 var perspectiveMatrix;
-
-/**
- * Geometric data objects
- */
-// var positions = [];
-// var colors = [];
-// var indices = [];
-
-
-// var indicesTriStrip = [];
-// var indicesTri = [];
-// var indicesLine = [];
-// var indicesPoint = [];
-
-/**
- * Buffers
- */
-// var vertexBuffer;
-// var colorBuffer;
-// var indexBuffer;
-
-/**
- * Image width & height
- */
-// var imgWidth;
-// var imgHeight;
-
-/**
- * Primitive options
- */
-const NUM_PRIM = 4;
-const TRIANGLE_STRIPS = 0;
-const TRIANGLES = 1;
-const LINES = 2;
-const POINTS = 3;
-
-// var primitive;
-
-/**
- * Channel options
- */
-const NUM_CH = 3;
-const RED_CH = 0;
-const GREEN_CH = 1;
-const BLUE_CH = 2;
-// var colorChannel;
-
-/**
- * Camera
- */
-// var camController;
 
 /**
  * Bounding sphere
  */
 var radius;
 var center;
-
-/**
- * 32-bit uint index flag
- */
-// var extOesElementIndexUint = null;
 
 function glPrimitive(gl, selectPrimitive) {
   switch (selectPrimitive) {
@@ -125,9 +64,6 @@ function main() {
   }
 
   const extOesElementIndexUint = gl.getExtension("OES_element_index_uint");
-  if (extOesElementIndexUint == null) {
-    console.log("Unsuccessful at enabling the extension for 32-bit uint indices. Defaulting to 16-bit uint indices.");
-  }
 
   gl.enable(gl.DEPTH_TEST);
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -135,6 +71,7 @@ function main() {
   const vs = compileShader(gl, vertexShaderSrc, gl.VERTEX_SHADER);
   const fs = compileShader(gl, fragmentShaderSrc, gl.FRAGMENT_SHADER);
   const program = createProgram(gl, vs, fs);
+
   gl.useProgram(program);
 
   const positionAttribLoc = gl.getAttribLocation(program, "a_position");
@@ -309,48 +246,6 @@ function createColors(imgData) {
   return res;
 }
 
-// function initHeightfield(positionBuffer, colorBuffer) {
-//   const w = this.width;
-//   const h = this.height;
-//   imgWidth = w;
-//   imgHeight = h;
-
-//   const imgData = getImgData(this);
-
-//   colors = new Array(w * h);
-//   for (let y = 0; y < h; y++) {
-//     for (let x = 0; x < w; x++) {
-//       const offset = (y * w + x) * 4;
-//       for (let i = 0; i < 4; i++) {
-//         const j = offset + i;
-//         colors[j] = imgData.data[j] / 255.0;
-//       }
-//     }
-//   }
-
-//   positions = createPositions(w, h, colors);
-
-//   ritterBoundingSphere(positions);
-
-//   indicesTriStrip = createTriStripIndices(w, h);
-//   indicesTri = createTriIndices(w, h);
-//   indicesLine = createLineIndices(w, h);
-//   indicesPoint = createPointIndices(w, h);
-
-//   // bufferData(vertices, colors);
-
-//   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-//   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.DYNAMIC_DRAW);
-
-//   gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-//   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.DYNAMIC_DRAW);
-
-//   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-//   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(indicesTriStrip), gl.DYNAMIC_DRAW);
-
-//   requestAnimationFrame(drawScene);
-// }
-
 function createPositions(w, h, colors, colorChannel) {
   let colorCh = 0;
   switch (colorChannel) {
@@ -366,7 +261,6 @@ function createPositions(w, h, colors, colorChannel) {
     default:
       throw "invalid color channel"
   }
-
 
   const res = new Array(w * h * 3);
   for (let y = 0; y < h; y++) {
@@ -542,57 +436,6 @@ function diff(va, vb) {
   }
   return d;
 }
-
-function bufferData(vertices, colors) {
-  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
-
-  gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.DYNAMIC_DRAW);
-
-  bufferIndices()
-}
-
-
-function bufferIndices() {
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-  if (currPrimitive === TRIANGLE_STRIPS) {
-    if (uintForIndices) {
-      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(indicesTriStrip), gl.DYNAMIC_DRAW);
-    }
-    else {
-      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indicesTriStrip), gl.DYNAMIC_DRAW);
-    }
-  }
-  else if (currPrimitive === TRIANGLES) {
-    if (uintForIndices) {
-      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(indicesTri), gl.DYNAMIC_DRAW);
-    }
-    else {
-      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indicesTri), gl.DYNAMIC_DRAW);
-    }
-  }
-  else if (currPrimitive === LINES) {
-    if (uintForIndices) {
-      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(indicesLine), gl.DYNAMIC_DRAW);
-    }
-    else {
-      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indicesLine), gl.DYNAMIC_DRAW);
-    }
-  }
-  else if (currPrimitive === POINTS) {
-    if (uintForIndices) {
-      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(indicesPoint), gl.DYNAMIC_DRAW);
-    }
-    else {
-      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indicesPoint), gl.DYNAMIC_DRAW);
-    }
-  }
-}
-
-/******************
- * Drawing methods
- ******************/
 
 function drawScene(gl, extOesElementIndexUint, program, positionAttribLoc, colorAttribLoc, positionBuffer, colorBuffer, indexBuffer, camController, selectedPrimitive, indices) {
   gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
