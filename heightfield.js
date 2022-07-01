@@ -68,9 +68,7 @@ function main() {
   gl.enable(gl.DEPTH_TEST);
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
-  const vs = compileShader(gl, vertexShaderSrc, gl.VERTEX_SHADER);
-  const fs = compileShader(gl, fragmentShaderSrc, gl.FRAGMENT_SHADER);
-  const program = createProgram(gl, vs, fs);
+  const program = createProgramFromShaderSources(gl, vertexShaderSrc, fragmentShaderSrc);
 
   gl.useProgram(program);
 
@@ -105,11 +103,10 @@ function main() {
   primSelect.addEventListener("change", (evt) => {
     selectedPrimitive = evt.target.selectedOptions[0].value;
     if (imgData) {
-      indices = createIndices(imgData.width, imgData.height, selectedPrimitive);
+      indices = createIndices(imgData.width, imgData.height, selectedPrimitive, extOesElementIndexUint);
 
-      const typedIndices = extOesElementIndexUint ? new Uint32Array(indices) : new Uint16Array(indices);
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, typedIndices, gl.DYNAMIC_DRAW);
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.DYNAMIC_DRAW);
 
       requestAnimationFrame(() => {
         drawScene(gl, extOesElementIndexUint, program, positionAttribLoc, colorAttribLoc, positionBuffer, colorBuffer, indexBuffer, camController, selectedPrimitive, indices);
@@ -140,7 +137,7 @@ function main() {
     colors = createColors(imgData);
 
     positions = createPositions(imgData.width, imgData.height, colors, selectedColorChannel);
-    indices = createIndices(imgData.width, imgData.height, selectedPrimitive);
+    indices = createIndices(imgData.width, imgData.height, selectedPrimitive, extOesElementIndexUint);
 
     ritterBoundingSphere(positions);
 
@@ -150,9 +147,8 @@ function main() {
     gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, colors, gl.DYNAMIC_DRAW);
 
-    const typedIndices = extOesElementIndexUint ? new Uint32Array(indices) : new Uint16Array(indices);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, typedIndices, gl.DYNAMIC_DRAW);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.DYNAMIC_DRAW);
 
     requestAnimationFrame(() => {
       drawScene(gl, extOesElementIndexUint, program, positionAttribLoc, colorAttribLoc, positionBuffer, colorBuffer, indexBuffer, camController, selectedPrimitive, indices);
@@ -182,7 +178,13 @@ function compileShader(gl, shaderSrc, shaderType) {
   return shader;
 }
 
-function createProgram(gl, vertexShader, fragmentShader) {
+function createProgramFromShaderSources(gl, vertexShaderSrc, fragmentShaderSrc) {
+  const vs = compileShader(gl, vertexShaderSrc, gl.VERTEX_SHADER);
+  const fs = compileShader(gl, fragmentShaderSrc, gl.FRAGMENT_SHADER);
+  return createProgramFromShaders(gl, vs, fs);
+}
+
+function createProgramFromShaders(gl, vertexShader, fragmentShader) {
   const prog = gl.createProgram();
   gl.attachShader(prog, vertexShader);
   gl.attachShader(prog, fragmentShader);
@@ -202,16 +204,17 @@ function createProgram(gl, vertexShader, fragmentShader) {
   throw errMsg;
 }
 
-function createIndices(w, h, selectedPrimitive) {
+function createIndices(w, h, selectedPrimitive, extOesElementIndexUint) {
+  const arrayConstructor = extOesElementIndexUint ? Uint32Array : Uint16Array;
   switch (selectedPrimitive) {
     case "triangle-strips":
-      return createTriStripIndices(w, h);
+      return createTriStripIndices(w, h, arrayConstructor);
     case "triangles":
-      return createTriIndices(w, h);
+      return createTriIndices(w, h, arrayConstructor);
     case "lines":
-      return createLineIndices(w, h);
+      return createLineIndices(w, h, arrayConstructor);
     case "points":
-      return createPointIndices(w, h);
+      return createPointIndices(w, h, arrayConstructor);
   }
   return null;
 }
@@ -271,28 +274,33 @@ function createPositions(w, h, colors, colorChannel) {
   return res;
 }
 
-function createTriStripIndices(w, h) {
-  // const res = new Array(w * (h - 1) * 2 + 2);
-  const res = [];
+function createTriStripIndices(w, h, arrayConstructor) {
+  const res = new arrayConstructor(w * (h - 1) * 2 + 2 * (h - 1));
+  let i = 0;
   for (let y = 0; y < h - 1; y++) {
     for (let x = 0; x < w; x++) {
-      const botLeft = x + y * w;
-      const topLeft = x + (y + 1) * w;
+      const botLeft = y * w + x;
+      const topLeft = (y + 1) * w + x;
 
-      res.push(botLeft);
-      res.push(topLeft);
+      res[i] = botLeft;
+      i++;
+      res[i] = topLeft;
+      i++;
 
       if (x === (w - 1)) {
-        res.push(topLeft);
-        res.push((y + 1) * w);
+        res[i] = topLeft;
+        i++;
+        res[i] = (y + 1) * w;
+        i++;
       }
     }
   }
   return res
 }
 
-function createTriIndices(w, h) {
-  const res = [];
+function createTriIndices(w, h, arrayConstructor) {
+  const res = new arrayConstructor((w - 1) * (h - 1) * 6);
+  let i = 0;
   for (let y = 0; y < h - 1; y++) {
     for (let x = 0; x < w - 1; x++) {
       const botLeft = x + y * w;
@@ -300,19 +308,27 @@ function createTriIndices(w, h) {
       const topLeft = x + (y + 1) * w;
       const topRight = (x + 1) + (y + 1) * w;
 
-      res.push(topLeft);
-      res.push(topRight);
-      res.push(botLeft);
-      res.push(topRight);
-      res.push(botRight);
-      res.push(botLeft);
+      const indices = [
+        topLeft,
+        topRight,
+        botLeft,
+        topRight,
+        botRight,
+        botLeft
+      ];
+
+      for (const index of indices) {
+        res[i] = index;
+        i++;
+      }
     }
   }
   return res;
 }
 
-function createLineIndices(w, h) {
-  const res = [];
+function createLineIndices(w, h, arrayConstructor) {
+  const res = new arrayConstructor((w - 1) * (h - 1) * 10);
+  let i = 0;
   for (let y = 0; y < h - 1; y++) {
     for (let x = 0; x < w - 1; x++) {
       const botLeft = x + y * w;
@@ -320,27 +336,30 @@ function createLineIndices(w, h) {
       const topLeft = x + (y + 1) * w;
       const topRight = (x + 1) + (y + 1) * w;
 
-      res.push(topLeft);
-      res.push(topRight);
+      const indices = [
+        topLeft,
+        topRight,
+        topRight,
+        botLeft,
+        botLeft,
+        topLeft,
+        topRight,
+        botRight,
+        botRight,
+        botLeft
+      ];
 
-      res.push(topRight);
-      res.push(botLeft);
-
-      res.push(botLeft);
-      res.push(topLeft);
-
-      res.push(topRight);
-      res.push(botRight);
-
-      res.push(botRight);
-      res.push(botLeft);
+      for (const index of indices) {
+        res[i] = index;
+        i++;
+      }
     }
   }
   return res;
 }
 
-function createPointIndices(w, h) {
-  const res = new Array(w * h);
+function createPointIndices(w, h, arrayConstructor) {
+  const res = new arrayConstructor(w * h);
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       res[y * w + x] = y * w + x;
