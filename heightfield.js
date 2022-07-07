@@ -28,7 +28,6 @@ void main(void) {
  * High-level pipeline objects
  */
 var mvMatrix;
-var perspectiveMatrix;
 
 /**
  * Bounding sphere
@@ -88,6 +87,7 @@ function main() {
   let imgData = null;
 
   const camController = new CameraController(canvas);
+
   const primSelect = document.getElementById("geometric-primitive-select");
   const colorChSelect = document.getElementById("color-channel-select");
 
@@ -458,12 +458,12 @@ function drawScene(gl, extOesElementIndexUint, program, positionAttribLoc, color
   gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-  perspectiveMatrix = makePerspective(45.0, 640.0 / 480.0, 0.01, 10000.0);
+  const perspectiveMatrix = glutil.perspective(45.0, 640.0 / 480.0, 0.01, 10000.0);
 
   loadIdentity();
 
-  var eyeDistance = (radius / Math.tan(45.0 / 2.0 * (Math.PI / 180.0)));
-  mvLookAt(center[0], center[1], center[2] - eyeDistance, center[0], center[1], center[2], 0, 1, 0);
+  const eyeDist = radius / Math.tan(45.0 / 2.0 * (Math.PI / 180.0));
+  mvLookAt(center[0], center[1], center[2] - eyeDist, center[0], center[1], center[2], 0, 1, 0);
 
   mvRotate(camController.xRot, [1, 0, 0]);
   mvRotate(camController.yRot, [0, 1, 0]);
@@ -474,7 +474,7 @@ function drawScene(gl, extOesElementIndexUint, program, positionAttribLoc, color
   gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
   gl.vertexAttribPointer(colorAttribLoc, 4, gl.FLOAT, false, 0, 0);
 
-  setMatrixUniforms(gl, program);
+  setMatrixUniforms(gl, program, perspectiveMatrix);
 
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
   const glPrim = glPrimitive(gl, selectedPrimitive);
@@ -498,9 +498,9 @@ function mvTranslate(v) {
   multMatrix(Matrix.Translation($V([v[0], v[1], v[2]])).ensure4x4());
 }
 
-function setMatrixUniforms(gl, program) {
+function setMatrixUniforms(gl, program, perspectiveMatrix) {
   var pUniform = gl.getUniformLocation(program, "u_projection");
-  gl.uniformMatrix4fv(pUniform, false, new Float32Array(perspectiveMatrix.flatten()));
+  gl.uniformMatrix4fv(pUniform, false, new Float32Array(perspectiveMatrix));
 
   var mvUniform = gl.getUniformLocation(program, "u_model_view");
   gl.uniformMatrix4fv(mvUniform, false, new Float32Array(mvMatrix.flatten()));
