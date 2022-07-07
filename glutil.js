@@ -14,5 +14,38 @@ var glutil = {
     const left = bottom * aspect;
     const right = top * aspect;
     return this.frustum(left, right, bottom, top, near, far);
-  }
+  },
+  compileShader: function (gl, shaderSrc, shaderType) {
+    const shader = gl.createShader(shaderType);
+
+    gl.shaderSource(shader, shaderSrc);
+
+    gl.compileShader(shader);
+
+    return shader;
+  },
+  createProgramFromShaders: function (gl, vertexShader, fragmentShader) {
+    const prog = gl.createProgram();
+    gl.attachShader(prog, vertexShader);
+    gl.attachShader(prog, fragmentShader);
+    gl.linkProgram(prog);
+
+    const ok = gl.getProgramParameter(prog, gl.LINK_STATUS);
+    if (ok) {
+      return prog
+    }
+
+    const errMsg = `Link failed: ${gl.getProgramInfoLog(prog)}\n` +
+      `Vertex shader info log: ${gl.getShaderInfoLog(vertexShader)}\n` +
+      `Fragment shader info log: ${gl.getShaderInfoLog(fragmentShader)}\n`;
+
+    gl.deleteProgram(prog);
+
+    throw errMsg;
+  },
+  createProgramFromShaderSources: function (gl, vertexShaderSrc, fragmentShaderSrc) {
+    const vs = this.compileShader(gl, vertexShaderSrc, gl.VERTEX_SHADER);
+    const fs = this.compileShader(gl, fragmentShaderSrc, gl.FRAGMENT_SHADER);
+    return this.createProgramFromShaders(gl, vs, fs);
+  },
 };

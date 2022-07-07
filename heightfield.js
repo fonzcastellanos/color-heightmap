@@ -67,7 +67,7 @@ function main() {
   gl.enable(gl.DEPTH_TEST);
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
-  const program = createProgramFromShaderSources(gl, VERTEX_SHADER_SRC, FRAGMENT_SHADER_SRC);
+  const program = glutil.createProgramFromShaderSources(gl, VERTEX_SHADER_SRC, FRAGMENT_SHADER_SRC);
 
   gl.useProgram(program);
 
@@ -173,43 +173,6 @@ function main() {
     const f = evt.target.files[0];
     freader.readAsDataURL(f);
   });
-}
-
-
-function compileShader(gl, shaderSrc, shaderType) {
-  const shader = gl.createShader(shaderType);
-
-  gl.shaderSource(shader, shaderSrc);
-
-  gl.compileShader(shader);
-
-  return shader;
-}
-
-function createProgramFromShaderSources(gl, vertexShaderSrc, fragmentShaderSrc) {
-  const vs = compileShader(gl, vertexShaderSrc, gl.VERTEX_SHADER);
-  const fs = compileShader(gl, fragmentShaderSrc, gl.FRAGMENT_SHADER);
-  return createProgramFromShaders(gl, vs, fs);
-}
-
-function createProgramFromShaders(gl, vertexShader, fragmentShader) {
-  const prog = gl.createProgram();
-  gl.attachShader(prog, vertexShader);
-  gl.attachShader(prog, fragmentShader);
-  gl.linkProgram(prog);
-
-  const ok = gl.getProgramParameter(prog, gl.LINK_STATUS);
-  if (ok) {
-    return prog
-  }
-
-  const errMsg = `Link failed: ${gl.getProgramInfoLog(prog)}\n` +
-    `Vertex shader info log: ${gl.getShaderInfoLog(vertexShader)}\n` +
-    `Fragment shader info log: ${gl.getShaderInfoLog(fragmentShader)}\n`;
-
-  gl.deleteProgram(prog);
-
-  throw errMsg;
 }
 
 function createIndices(w, h, selectedPrimitive, extOesElementIndexUint) {
