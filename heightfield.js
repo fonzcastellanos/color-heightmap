@@ -77,6 +77,9 @@ function main() {
   const colorAttribLoc = gl.getAttribLocation(program, "a_color");
   gl.enableVertexAttribArray(colorAttribLoc);
 
+  const projectionUniformLoc = gl.getUniformLocation(program, "u_projection");
+  const modelViewUniformLoc = gl.getUniformLocation(program, "u_model_view");
+
   const positionBuffer = gl.createBuffer();
   const colorBuffer = gl.createBuffer();
   const indexBuffer = gl.createBuffer();
@@ -96,7 +99,7 @@ function main() {
 
   camController.onchange = () => {
     requestAnimationFrame(() => {
-      drawScene(gl, extOesElementIndexUint, program, positionAttribLoc, colorAttribLoc, positionBuffer, colorBuffer, indexBuffer, camController, selectedPrimitive, indices);
+      draw(gl, extOesElementIndexUint, positionAttribLoc, colorAttribLoc, projectionUniformLoc, modelViewUniformLoc, positionBuffer, colorBuffer, indexBuffer, camController, selectedPrimitive, indices);
     })
   };
 
@@ -109,7 +112,7 @@ function main() {
       gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.DYNAMIC_DRAW);
 
       requestAnimationFrame(() => {
-        drawScene(gl, extOesElementIndexUint, program, positionAttribLoc, colorAttribLoc, positionBuffer, colorBuffer, indexBuffer, camController, selectedPrimitive, indices);
+        draw(gl, extOesElementIndexUint, positionAttribLoc, colorAttribLoc, projectionUniformLoc, modelViewUniformLoc, positionBuffer, colorBuffer, indexBuffer, camController, selectedPrimitive, indices);
       });
     }
   });
@@ -125,7 +128,7 @@ function main() {
       gl.bufferData(gl.ARRAY_BUFFER, positions, gl.DYNAMIC_DRAW);
 
       requestAnimationFrame(() => {
-        drawScene(gl, extOesElementIndexUint, program, positionAttribLoc, colorAttribLoc, positionBuffer, colorBuffer, indexBuffer, camController, selectedPrimitive, indices);
+        draw(gl, extOesElementIndexUint, positionAttribLoc, colorAttribLoc, projectionUniformLoc, modelViewUniformLoc, positionBuffer, colorBuffer, indexBuffer, camController, selectedPrimitive, indices);
       });
     }
 
@@ -151,7 +154,7 @@ function main() {
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.DYNAMIC_DRAW);
 
     requestAnimationFrame(() => {
-      drawScene(gl, extOesElementIndexUint, program, positionAttribLoc, colorAttribLoc, positionBuffer, colorBuffer, indexBuffer, camController, selectedPrimitive, indices);
+      draw(gl, extOesElementIndexUint, positionAttribLoc, colorAttribLoc, projectionUniformLoc, modelViewUniformLoc, positionBuffer, colorBuffer, indexBuffer, camController, selectedPrimitive, indices);
     });
   });
 
@@ -454,7 +457,7 @@ function diff(va, vb) {
   return d;
 }
 
-function drawScene(gl, extOesElementIndexUint, program, positionAttribLoc, colorAttribLoc, positionBuffer, colorBuffer, indexBuffer, camController, selectedPrimitive, indices) {
+function draw(gl, extOesElementIndexUint, positionAttribLoc, colorAttribLoc, projectionUniformLoc, modelViewUniformLoc, positionBuffer, colorBuffer, indexBuffer, camController, selectedPrimitive, indices) {
   gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -474,7 +477,8 @@ function drawScene(gl, extOesElementIndexUint, program, positionAttribLoc, color
   gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
   gl.vertexAttribPointer(colorAttribLoc, 4, gl.FLOAT, false, 0, 0);
 
-  setMatrixUniforms(gl, program, perspectiveMatrix);
+  gl.uniformMatrix4fv(projectionUniformLoc, false, new Float32Array(perspectiveMatrix));
+  gl.uniformMatrix4fv(modelViewUniformLoc, false, new Float32Array(mvMatrix.flatten()));
 
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
   const glPrim = glPrimitive(gl, selectedPrimitive);
@@ -496,14 +500,6 @@ function multMatrix(m) {
 
 function mvTranslate(v) {
   multMatrix(Matrix.Translation($V([v[0], v[1], v[2]])).ensure4x4());
-}
-
-function setMatrixUniforms(gl, program, perspectiveMatrix) {
-  var pUniform = gl.getUniformLocation(program, "u_projection");
-  gl.uniformMatrix4fv(pUniform, false, new Float32Array(perspectiveMatrix));
-
-  var mvUniform = gl.getUniformLocation(program, "u_model_view");
-  gl.uniformMatrix4fv(mvUniform, false, new Float32Array(mvMatrix.flatten()));
 }
 
 var mvMatrixStack = [];
