@@ -1,5 +1,5 @@
 
-var glutil = {
+const glutil = {
   frustum: function (left, right, bottom, top, near, far) {
     return [
       2 * near / (right - left), 0, 0, 0,

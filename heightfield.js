@@ -440,7 +440,7 @@ function draw(gl, extOesElementIndexUint, projectionUniformLoc, modelViewUniform
   mvRotate(camController.yRot, [0, 1, 0]);
 
   gl.uniformMatrix4fv(projectionUniformLoc, false, new Float32Array(perspectiveMatrix));
-  gl.uniformMatrix4fv(modelViewUniformLoc, false, new Float32Array(mvMatrix.flatten()));
+  gl.uniformMatrix4fv(modelViewUniformLoc, false, new Float32Array(mvMatrix));
 
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
   const glPrim = glPrimitive(gl, selectedPrimitive);
@@ -452,36 +452,39 @@ function draw(gl, extOesElementIndexUint, projectionUniformLoc, modelViewUniform
  Matrix utility methods
 ************************/
 
+function lookAt(eye, at, up) {
+  const n = vec3.subtract(eye, at);
+  vec3.normalize(n);
+
+  const u = vec3.cross(up, n)
+  vec3.normalize(u);
+
+  const v = vec3.cross(n, u);
+  vec3.normalize(v);
+
+  const rotation = [
+    u[0], v[0], n[0], 0,
+    u[1], v[1], n[1], 0,
+    u[2], v[2], n[2], 0,
+    0, 0, 0, 1
+  ];
+
+  const translation = [
+    1, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 1, 0,
+    -eye[0], -eye[1], -eye[2], 1
+  ];
+
+  return matrix4.multiply(rotation, translation);
+}
+
 function loadIdentity() {
-  mvMatrix = Matrix.I(4);
+  mvMatrix = matrix4.identity();
 }
 
 function multMatrix(m) {
-  mvMatrix = mvMatrix.x(m);
-}
-
-function mvTranslate(v) {
-  multMatrix(Matrix.Translation($V([v[0], v[1], v[2]])).ensure4x4());
-}
-
-var mvMatrixStack = [];
-
-function mvPushMatrix(m) {
-  if (m) {
-    mvMatrixStack.push(m.dup());
-    mvMatrix = m.dup();
-  } else {
-    mvMatrixStack.push(mvMatrix.dup());
-  }
-}
-
-function mvPopMatrix() {
-  if (!mvMatrixStack.length) {
-    throw ("Can't pop from an empty matrix stack.");
-  }
-
-  mvMatrix = mvMatrixStack.pop();
-  return mvMatrix;
+  mvMatrix = matrix4.multiply(mvMatrix, m.flatten());
 }
 
 function mvRotate(angle, v) {
@@ -492,5 +495,5 @@ function mvRotate(angle, v) {
 }
 
 function mvLookAt(ex, ey, ez, cx, cy, cz, ux, uy, uz) {
-  mvMatrix = makeLookAt(ex, ey, ez, cx, cy, cz, ux, uy, uz);
+  mvMatrix = lookAt([ex, ey, ez], [cx, cy, cz], [ux, uy, uz]);
 }
