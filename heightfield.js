@@ -1,6 +1,6 @@
 "use strict";
 
-var vertexShaderSrc = `
+const VERTEX_SHADER_SRC = `
 attribute vec3 a_position;
 attribute vec4 a_color;
 
@@ -16,7 +16,7 @@ void main(void) {
 }
 `;
 
-var fragmentShaderSrc = `
+const FRAGMENT_SHADER_SRC = `
 varying lowp vec4 v_color;
 
 void main(void) {
@@ -67,7 +67,7 @@ function main() {
   gl.enable(gl.DEPTH_TEST);
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
-  const program = createProgramFromShaderSources(gl, vertexShaderSrc, fragmentShaderSrc);
+  const program = createProgramFromShaderSources(gl, VERTEX_SHADER_SRC, FRAGMENT_SHADER_SRC);
 
   gl.useProgram(program);
 
