@@ -24,16 +24,7 @@ void main(void) {
 }
 `;
 
-/**
- * High-level pipeline objects
- */
 var mvMatrix;
-
-/**
- * Bounding sphere
- */
-var radius;
-var center;
 
 function glPrimitive(gl, selectedPrimitive) {
   switch (selectedPrimitive) {
@@ -101,11 +92,14 @@ function main() {
   let colors = null;
   let indices = null;
   let imgData = null;
+  let boundingSphere = null;
 
   camController.onchange = () => {
-    requestAnimationFrame(() => {
-      draw(gl, extOesElementIndexUint, projectionUniformLoc, modelViewUniformLoc, indexBuffer, camController, selectedPrimitive, indices);
-    })
+    if (imgData) {
+      requestAnimationFrame(() => {
+        draw(gl, extOesElementIndexUint, projectionUniformLoc, modelViewUniformLoc, indexBuffer, camController, selectedPrimitive, indices, boundingSphere);
+      })
+    }
   };
 
   primSelect.addEventListener("change", (evt) => {
@@ -117,7 +111,7 @@ function main() {
       gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.DYNAMIC_DRAW);
 
       requestAnimationFrame(() => {
-        draw(gl, extOesElementIndexUint, projectionUniformLoc, modelViewUniformLoc, indexBuffer, camController, selectedPrimitive, indices);
+        draw(gl, extOesElementIndexUint, projectionUniformLoc, modelViewUniformLoc, indexBuffer, camController, selectedPrimitive, indices, boundingSphere);
       });
     }
   });
@@ -133,7 +127,7 @@ function main() {
       gl.bufferData(gl.ARRAY_BUFFER, positions, gl.DYNAMIC_DRAW);
 
       requestAnimationFrame(() => {
-        draw(gl, extOesElementIndexUint, projectionUniformLoc, modelViewUniformLoc, indexBuffer, camController, selectedPrimitive, indices);
+        draw(gl, extOesElementIndexUint, projectionUniformLoc, modelViewUniformLoc, indexBuffer, camController, selectedPrimitive, indices, boundingSphere);
       });
     }
 
@@ -156,7 +150,7 @@ function main() {
       }
     }
 
-    ({ center, radius } = boundingSphere(unflattenedPositions));
+    boundingSphere = findBoundingSphere(unflattenedPositions);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, positions, gl.DYNAMIC_DRAW);
@@ -168,7 +162,7 @@ function main() {
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.DYNAMIC_DRAW);
 
     requestAnimationFrame(() => {
-      draw(gl, extOesElementIndexUint, projectionUniformLoc, modelViewUniformLoc, indexBuffer, camController, selectedPrimitive, indices);
+      draw(gl, extOesElementIndexUint, projectionUniformLoc, modelViewUniformLoc, indexBuffer, camController, selectedPrimitive, indices, boundingSphere);
     });
   });
 
@@ -348,7 +342,7 @@ function createPointIndices(w, h, arrayConstructor) {
   return res;
 }
 
-function boundingSphere(points) {
+function findBoundingSphere(points) {
   let xmin = points[0];
   let xmax = points[0];
   let ymin = points[0];
@@ -425,16 +419,18 @@ function midpoint(a, b) {
   return res;
 }
 
-function draw(gl, extOesElementIndexUint, projectionUniformLoc, modelViewUniformLoc, indexBuffer, camController, selectedPrimitive, indices) {
+function draw(gl, extOesElementIndexUint, projectionUniformLoc, modelViewUniformLoc, indexBuffer, camController, selectedPrimitive, indices, boundingSphere) {
   glutil.resizeCanvasToClientSize(gl.canvas);
   gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+  const bsph = boundingSphere;
+
   const perspectiveMatrix = glutil.perspective(45.0, gl.canvas.clientWidth / gl.canvas.clientHeight, 1, 10000.0);
 
-  const eyeDist = radius / Math.tan(45.0 / 2.0 * (Math.PI / 180.0));
-  const eye = [center[0], center[1], center[2] - eyeDist];
-  const modelViewMatrix = lookAt(eye, center, [0, 1, 0]);
+  const eyeDist = bsph.radius / Math.tan(45.0 / 2.0 * (Math.PI / 180.0));
+  const eye = [bsph.center[0], bsph.center[1], bsph.center[2] - eyeDist];
+  const modelViewMatrix = lookAt(eye, bsph.center, [0, 1, 0]);
   mvMatrix = modelViewMatrix;
 
   mvRotate(camController.xRot, [1, 0, 0]);
