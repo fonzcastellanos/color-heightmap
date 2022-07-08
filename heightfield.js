@@ -147,7 +147,16 @@ function main() {
     positions = createPositions(imgData.width, imgData.height, colors, selectedColorChannel);
     indices = createIndices(imgData.width, imgData.height, selectedPrimitive, extOesElementIndexUint);
 
-    ritterBoundingSphere(positions);
+    const unflattenedPositions = new Array(positions.length / 3);
+    for (let i = 0; i < unflattenedPositions.length; i++) {
+      const start = i * 3;
+      unflattenedPositions[i] = new Array(3);
+      for (let j = 0; j < 3; j++) {
+        unflattenedPositions[i][j] = positions[start + j];
+      }
+    }
+
+    [center, radius] = boundingSphere(unflattenedPositions);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, positions, gl.DYNAMIC_DRAW);
@@ -339,90 +348,81 @@ function createPointIndices(w, h, arrayConstructor) {
   return res;
 }
 
-/**************************************
- * Ritter's bounding sphere algorithm
- **************************************/
+function boundingSphere(points) {
+  let xmin = points[0];
+  let xmax = points[0];
+  let ymin = points[0];
+  let ymax = points[0];
+  let zmin = points[0];
+  let zmax = points[0];
 
-function ritterBoundingSphere(vertices) {
-  const x = getVertex(vertices, 0);
-  const y = largestDistFrom(x, vertices);
-  const z = largestDistFrom(y, vertices);
-
-  center = midpoint(y, z);
-  radius = Math.sqrt(distSq(y, z)) / 2.0;
-  let radiusSq = Math.pow(radius, 2);
-
-  const outsideVertices = [];
-  for (let i = 0; i < vertices.length; i += 3) {
-    const w = getVertex(vertices, i);
-    if (radiusSq < distSq(w, center)) {
-      outsideVertices.push(w);
+  for (let i = 1; i < points.length; i++) {
+    const p = points[i];
+    if (p[0] < xmin[0]) {
+      xmin = p;
+    }
+    if (p[0] > xmax[0]) {
+      xmax = p;
+    }
+    if (p[1] < ymin[1]) {
+      ymin = p;
+    }
+    if (p[1] > ymax[1]) {
+      ymax = p;
+    }
+    if (p[2] < zmin[2]) {
+      zmin = p;
+    }
+    if (p[2] > zmax[2]) {
+      zmax = p;
     }
   }
 
-  while (outsideVertices.length > 0) {
-    var ov = popVertex(outsideVertices);
-    var ovDistSq = distSq(ov, center);
-    if (ovDistSq > radiusSq) {
-      radiusSq = ovDistSq;
+  const xspan = vec3.squaredDistance(xmax, xmin);
+  const yspan = vec3.squaredDistance(ymax, ymin);
+  const zspan = vec3.squaredDistance(zmax, zmin);
+
+  const pointPairMaxSpan = [xmin, xmax];
+  let maxSpan = xspan;
+  if (yspan > maxSpan) {
+    maxSpan = yspan;
+    pointPairMaxSpan[0] = ymin;
+    pointPairMaxSpan[1] = ymax;
+  }
+  if (zspan > maxSpan) {
+    maxSpan = zspan;
+    pointPairMaxSpan[0] = zmin;
+    pointPairMaxSpan[1] = zmax;
+  }
+
+  const center = midpoint(pointPairMaxSpan[0], pointPairMaxSpan[1]);
+  let radiusSq = vec3.squaredDistance(pointPairMaxSpan[1], center);
+  let radius = Math.sqrt(radiusSq);
+
+  for (const p of points) {
+    const distSq = vec3.squaredDistance(p, center);
+    if (distSq > radiusSq) {
+      const dist = Math.sqrt(distSq);
+
+      radius = (radius + dist) / 2.0;
+      radiusSq = radius * radius;
+
+      const offset = dist - radius;
+      for (let i = 0; i < 3; i++) {
+        center[i] = (radius * center[i] + offset * p[i]) / dist;
+      }
     }
   }
-  radius = Math.sqrt(radiusSq);
-}
 
-function popVertex(inVertices) {
-  const vertex = [];
-  for (let i = 0; i < 3; i++) {
-    vertex.push(inVertices.pop());
-  }
-  return vertex.reverse();
+  return [center, radius];
 }
 
 function midpoint(a, b) {
-  const z = new Array(3);
+  const res = new Array(3);
   for (let i = 0; i < 3; i++) {
-    z[i] = (a[i] + b[i]) / 2.0;
-  }
-  return z;
-}
-
-function largestDistFrom(v, vertices) {
-  let maxDistSq = 0;
-  let vLargest;
-  for (let i = 0; i < vertices.length; i += 3) {
-    let w = getVertex(vertices, i);
-    let dSq = distSq(v, w);
-    if (maxDistSq < dSq) {
-      maxDistSq = dSq;
-      vLargest = w;
-    }
-  }
-  return vLargest;
-}
-
-function getVertex(vertices, idx) {
-  const v = new Array(3);
-  for (let i = 0; i < 3; i++) {
-    v[i] = vertices[idx + i];
-  }
-  return v;
-}
-
-function distSq(va, vb) {
-  const vdiff = diff(va, vb);
-  let res = 0;
-  for (const component of vdiff) {
-    res += Math.pow(component, 2);
+    res[i] = (a[i] + b[i]) / 2.0;
   }
   return res;
-}
-
-function diff(va, vb) {
-  const d = new Array(3);
-  for (let i = 0; i < 3; i++) {
-    d[i] = va[i] - vb[i];
-  }
-  return d;
 }
 
 function draw(gl, extOesElementIndexUint, projectionUniformLoc, modelViewUniformLoc, indexBuffer, camController, selectedPrimitive, indices) {
@@ -431,10 +431,10 @@ function draw(gl, extOesElementIndexUint, projectionUniformLoc, modelViewUniform
 
   const perspectiveMatrix = glutil.perspective(45.0, 640.0 / 480.0, 0.01, 10000.0);
 
-  loadIdentity();
-
   const eyeDist = radius / Math.tan(45.0 / 2.0 * (Math.PI / 180.0));
-  mvLookAt(center[0], center[1], center[2] - eyeDist, center[0], center[1], center[2], 0, 1, 0);
+  const eye = [center[0], center[1], center[2] - eyeDist];
+  const modelViewMatrix = lookAt(eye, center, [0, 1, 0]);
+  mvMatrix = modelViewMatrix;
 
   mvRotate(camController.xRot, [1, 0, 0]);
   mvRotate(camController.yRot, [0, 1, 0]);
@@ -447,10 +447,6 @@ function draw(gl, extOesElementIndexUint, projectionUniformLoc, modelViewUniform
   const glType = extOesElementIndexUint ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT;
   gl.drawElements(glPrim, indices.length, glType, 0);
 }
-
-/************************
- Matrix utility methods
-************************/
 
 function lookAt(eye, at, up) {
   const n = vec3.subtract(eye, at);
@@ -479,10 +475,6 @@ function lookAt(eye, at, up) {
   return matrix4.multiply(rotation, translation);
 }
 
-function loadIdentity() {
-  mvMatrix = matrix4.identity();
-}
-
 function multMatrix(m) {
   mvMatrix = matrix4.multiply(mvMatrix, m.flatten());
 }
@@ -492,8 +484,4 @@ function mvRotate(angle, v) {
 
   var m = Matrix.Rotation(inRadians, $V([v[0], v[1], v[2]])).ensure4x4();
   multMatrix(m);
-}
-
-function mvLookAt(ex, ey, ez, cx, cy, cz, ux, uy, uz) {
-  mvMatrix = lookAt([ex, ey, ez], [cx, cy, cz], [ux, uy, uz]);
 }

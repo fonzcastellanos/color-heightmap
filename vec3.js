@@ -30,11 +30,15 @@ const vec3 = {
       v[i] /= magn;
     }
   },
-  cross: function cross(a, b) {
+  cross: function (a, b) {
     return [
       a[1] * b[2] - a[2] * b[1],
       a[2] * b[0] - a[0] * b[2],
       a[0] * b[1] - a[1] * b[0]
     ];
+  },
+  squaredDistance: function (a, b) {
+    const diff = this.subtract(a, b);
+    return this.dot(diff, diff);
   }
 }
