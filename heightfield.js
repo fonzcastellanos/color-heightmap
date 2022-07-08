@@ -49,7 +49,9 @@ function main() {
 
   const gl = canvas.getContext("webgl");
   if (gl == null) {
-    console.error("Failed to to initialize WebGL. Executing browser may not support it.");
+    console.error(
+      "Failed to to initialize WebGL. Executing browser may not support it."
+    );
     return;
   }
 
@@ -58,7 +60,9 @@ function main() {
   gl.enable(gl.DEPTH_TEST);
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
-  const program = glutil.createProgramFromShaderSources(gl, VERTEX_SHADER_SRC, FRAGMENT_SHADER_SRC);
+  const program = glutil.createProgramFromShaderSources(
+    gl, VERTEX_SHADER_SRC, FRAGMENT_SHADER_SRC
+  );
 
   gl.useProgram(program);
 
@@ -95,7 +99,17 @@ function main() {
   let boundingSphere = null;
 
   const wrappedDraw = () => {
-    draw(gl, extOesElementIndexUint, projectionUniformLoc, modelViewUniformLoc, indexBuffer, camController, selectedPrimitive, indices, boundingSphere);
+    draw(
+      gl,
+      extOesElementIndexUint,
+      projectionUniformLoc,
+      modelViewUniformLoc,
+      indexBuffer,
+      camController,
+      selectedPrimitive,
+      indices,
+      boundingSphere
+    );
   };
 
   camController.onchange = () => {
@@ -107,7 +121,9 @@ function main() {
   primSelect.addEventListener("change", (evt) => {
     selectedPrimitive = evt.target.selectedOptions[0].value;
     if (imgData) {
-      indices = createIndices(imgData.width, imgData.height, selectedPrimitive, extOesElementIndexUint);
+      indices = createIndices(
+        imgData.width, imgData.height, selectedPrimitive, extOesElementIndexUint
+      );
 
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
       gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.DYNAMIC_DRAW);
@@ -120,7 +136,9 @@ function main() {
     selectedColorChannel = evt.target.selectedOptions[0].value;
 
     if (imgData) {
-      positions = createPositions(imgData.width, imgData.height, colors, selectedColorChannel);
+      positions = createPositions(
+        imgData.width, imgData.height, colors, selectedColorChannel
+      );
 
       gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, positions, gl.DYNAMIC_DRAW);
@@ -134,8 +152,12 @@ function main() {
     imgData = getImgData(evt.target);
     colors = createColors(imgData);
 
-    positions = createPositions(imgData.width, imgData.height, colors, selectedColorChannel);
-    indices = createIndices(imgData.width, imgData.height, selectedPrimitive, extOesElementIndexUint);
+    positions = createPositions(
+      imgData.width, imgData.height, colors, selectedColorChannel
+    );
+    indices = createIndices(
+      imgData.width, imgData.height, selectedPrimitive, extOesElementIndexUint
+    );
 
     const unflattenedPositions = new Array(positions.length / 3);
     for (let i = 0; i < unflattenedPositions.length; i++) {
@@ -215,7 +237,7 @@ function createColors(imgData) {
 }
 
 function createPositions(w, h, colors, colorChannel) {
-  let colorCh = 0;
+  let colorCh = null;
   switch (colorChannel) {
     case "red":
       colorCh = 0;
@@ -285,8 +307,8 @@ function createTriIndices(w, h, arrayConstructor) {
         botLeft
       ];
 
-      for (const index of indices) {
-        res[i] = index;
+      for (const idx of indices) {
+        res[i] = idx;
         i++;
       }
     }
@@ -317,8 +339,8 @@ function createLineIndices(w, h, arrayConstructor) {
         botLeft
       ];
 
-      for (const index of indices) {
-        res[i] = index;
+      for (const idx of indices) {
+        res[i] = idx;
         i++;
       }
     }
@@ -405,14 +427,27 @@ function findBoundingSphere(points) {
   return { center: center, radius: radius };
 }
 
-function draw(gl, extOesElementIndexUint, projectionUniformLoc, modelViewUniformLoc, indexBuffer, camController, selectedPrimitive, indices, boundingSphere) {
+function draw(
+  gl,
+  extOesElementIndexUint,
+  projectionUniformLoc,
+  modelViewUniformLoc,
+  indexBuffer,
+  camController,
+  selectedPrimitive,
+  indices,
+  boundingSphere
+) {
   glutil.resizeCanvasToClientSize(gl.canvas);
   gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
   const bsph = boundingSphere;
 
-  const perspectiveMatrix = glutil.perspective(45.0, gl.canvas.clientWidth / gl.canvas.clientHeight, 1, 10000.0);
+  const perspective = glutil.perspective(
+    45.0, gl.canvas.clientWidth / gl.canvas.clientHeight, 1, 10000.0
+  );
+  gl.uniformMatrix4fv(projectionUniformLoc, false, new Float32Array(perspective));
 
   const eyeDist = bsph.radius / Math.tan(45.0 / 2.0 * (Math.PI / 180.0));
   const eye = [bsph.center[0], bsph.center[1], bsph.center[2] - eyeDist];
@@ -422,7 +457,6 @@ function draw(gl, extOesElementIndexUint, projectionUniformLoc, modelViewUniform
   mvRotate(camController.xRot, [1, 0, 0]);
   mvRotate(camController.yRot, [0, 1, 0]);
 
-  gl.uniformMatrix4fv(projectionUniformLoc, false, new Float32Array(perspectiveMatrix));
   gl.uniformMatrix4fv(modelViewUniformLoc, false, new Float32Array(mvMatrix));
 
   const glPrim = glPrimitive(gl, selectedPrimitive);
