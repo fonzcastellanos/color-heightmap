@@ -94,11 +94,13 @@ function main() {
   let imgData = null;
   let boundingSphere = null;
 
+  const wrappedDraw = () => {
+    draw(gl, extOesElementIndexUint, projectionUniformLoc, modelViewUniformLoc, indexBuffer, camController, selectedPrimitive, indices, boundingSphere);
+  };
+
   camController.onchange = () => {
     if (imgData) {
-      requestAnimationFrame(() => {
-        draw(gl, extOesElementIndexUint, projectionUniformLoc, modelViewUniformLoc, indexBuffer, camController, selectedPrimitive, indices, boundingSphere);
-      })
+      requestAnimationFrame(wrappedDraw);
     }
   };
 
@@ -110,9 +112,7 @@ function main() {
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
       gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.DYNAMIC_DRAW);
 
-      requestAnimationFrame(() => {
-        draw(gl, extOesElementIndexUint, projectionUniformLoc, modelViewUniformLoc, indexBuffer, camController, selectedPrimitive, indices, boundingSphere);
-      });
+      requestAnimationFrame(wrappedDraw);
     }
   });
 
@@ -123,14 +123,10 @@ function main() {
       positions = createPositions(imgData.width, imgData.height, colors, selectedColorChannel);
 
       gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-      // gl.bufferData(gl.ARRAY_BUFFER, null, gl.DYNAMIC_DRAW);
       gl.bufferData(gl.ARRAY_BUFFER, positions, gl.DYNAMIC_DRAW);
 
-      requestAnimationFrame(() => {
-        draw(gl, extOesElementIndexUint, projectionUniformLoc, modelViewUniformLoc, indexBuffer, camController, selectedPrimitive, indices, boundingSphere);
-      });
+      requestAnimationFrame(wrappedDraw);
     }
-
   });
 
   const img = new Image();
@@ -161,9 +157,7 @@ function main() {
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.DYNAMIC_DRAW);
 
-    requestAnimationFrame(() => {
-      draw(gl, extOesElementIndexUint, projectionUniformLoc, modelViewUniformLoc, indexBuffer, camController, selectedPrimitive, indices, boundingSphere);
-    });
+    requestAnimationFrame(wrappedDraw);
   });
 
   const freader = new FileReader();
@@ -431,9 +425,9 @@ function draw(gl, extOesElementIndexUint, projectionUniformLoc, modelViewUniform
   gl.uniformMatrix4fv(projectionUniformLoc, false, new Float32Array(perspectiveMatrix));
   gl.uniformMatrix4fv(modelViewUniformLoc, false, new Float32Array(mvMatrix));
 
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
   const glPrim = glPrimitive(gl, selectedPrimitive);
   const glType = extOesElementIndexUint ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT;
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
   gl.drawElements(glPrim, indices.length, glType, 0);
 }
 
