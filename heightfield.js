@@ -389,7 +389,7 @@ function findBoundingSphere(points) {
     pointPairMaxSpan[1] = zmax;
   }
 
-  const center = midpoint(pointPairMaxSpan[0], pointPairMaxSpan[1]);
+  const center = vec3.midpoint(pointPairMaxSpan[0], pointPairMaxSpan[1]);
   let radiusSq = vec3.squaredDistance(pointPairMaxSpan[1], center);
   let radius = Math.sqrt(radiusSq);
 
@@ -409,14 +409,6 @@ function findBoundingSphere(points) {
   }
 
   return { center: center, radius: radius };
-}
-
-function midpoint(a, b) {
-  const res = new Array(3);
-  for (let i = 0; i < 3; i++) {
-    res[i] = (a[i] + b[i]) / 2.0;
-  }
-  return res;
 }
 
 function draw(gl, extOesElementIndexUint, projectionUniformLoc, modelViewUniformLoc, indexBuffer, camController, selectedPrimitive, indices, boundingSphere) {

@@ -40,5 +40,12 @@ const vec3 = {
   squaredDistance: function (a, b) {
     const diff = this.subtract(a, b);
     return this.dot(diff, diff);
+  },
+  midpoint: function (a, b) {
+    const res = new Array(3);
+    for (let i = 0; i < 3; i++) {
+      res[i] = (a[i] + b[i]) / 2.0;
+    }
+    return res;
   }
 }
