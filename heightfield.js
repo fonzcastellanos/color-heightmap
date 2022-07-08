@@ -24,8 +24,6 @@ void main(void) {
 }
 `;
 
-var mvMatrix;
-
 function glPrimitive(gl, selectedPrimitive) {
   switch (selectedPrimitive) {
     case "triangle-strips":
@@ -451,27 +449,16 @@ function draw(
 
   const eyeDist = bsph.radius / Math.tan(45.0 / 2.0 * (Math.PI / 180.0));
   const eye = [bsph.center[0], bsph.center[1], bsph.center[2] - eyeDist];
-  const modelViewMatrix = glutil.lookAt(eye, bsph.center, [0, 1, 0]);
-  mvMatrix = modelViewMatrix;
 
-  mvRotate(camController.xRot, [1, 0, 0]);
-  mvRotate(camController.yRot, [0, 1, 0]);
+  let modelView = glutil.lookAt(eye, bsph.center, [0, 1, 0]);
 
-  gl.uniformMatrix4fv(modelViewUniformLoc, false, new Float32Array(mvMatrix));
+  modelView = matrix4.multiply(modelView, matrix4.rotationX(camController.xRot));
+  modelView = matrix4.multiply(modelView, matrix4.rotationY(camController.yRot));
+
+  gl.uniformMatrix4fv(modelViewUniformLoc, false, new Float32Array(modelView));
 
   const glPrim = glPrimitive(gl, selectedPrimitive);
   const glType = extOesElementIndexUint ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT;
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
   gl.drawElements(glPrim, indices.length, glType, 0);
-}
-
-function multMatrix(m) {
-  mvMatrix = matrix4.multiply(mvMatrix, m.flatten());
-}
-
-function mvRotate(angle, v) {
-  var inRadians = angle * Math.PI / 180.0;
-
-  var m = Matrix.Rotation(inRadians, $V([v[0], v[1], v[2]])).ensure4x4();
-  multMatrix(m);
 }

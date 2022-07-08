@@ -26,7 +26,6 @@ You can test the app at https://fonzcastellanos.github.io/image_heightfield/
 
 ## Built With
 - [WebGL](https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API) - JavaScript API for rendering interactive 3D and 2D graphics
-- [Sylvester](http://sylvester.jcoglan.com/) - JavaScript API for vector and matrix math
 
 ## Author
 Alfonso Castellanos

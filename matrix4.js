@@ -17,5 +17,27 @@ const matrix4 = {
       }
     }
     return res;
+  },
+  rotationX: function (degrees) {
+    const radians = degrees * Math.PI / 180.0;
+    const c = Math.cos(radians);
+    const s = Math.sin(radians);
+    return [
+      1, 0, 0, 0,
+      0, c, s, 0,
+      0, -s, c, 0,
+      0, 0, 0, 1
+    ];
+  },
+  rotationY: function (degrees) {
+    const radians = degrees * Math.PI / 180.0;
+    const c = Math.cos(radians);
+    const s = Math.sin(radians);
+    return [
+      c, 0, -s, 0,
+      0, 1, 0, 0,
+      s, 0, c, 0,
+      0, 0, 0, 1
+    ];
   }
 };
