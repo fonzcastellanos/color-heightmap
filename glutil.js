@@ -24,6 +24,19 @@ const glutil = {
 
     return shader;
   },
+  resizeCanvasToClientSize: function (canvas) {
+    const cw = canvas.clientWidth;
+    const ch = canvas.clientHeight;
+
+    const resize = canvas.width !== cw || canvas.height !== ch;
+
+    if (resize) {
+      canvas.width = cw;
+      canvas.height = ch;
+    }
+
+    return resize;
+  },
   createProgramFromShaders: function (gl, vertexShader, fragmentShader) {
     const prog = gl.createProgram();
     gl.attachShader(prog, vertexShader);

@@ -52,7 +52,7 @@ function glPrimitive(gl, selectedPrimitive) {
 function main() {
   const canvas = document.getElementById("gl-canvas");
   if (canvas == null) {
-    console.error("Failed to get canvas with id gl-canvas.");
+    console.error("Failed to get canvas with id \"gl-canvas\".");
     return;
   }
 
@@ -89,18 +89,18 @@ function main() {
   const projectionUniformLoc = gl.getUniformLocation(program, "u_projection");
   const modelViewUniformLoc = gl.getUniformLocation(program, "u_model_view");
 
-  let positions = null;
-  let colors = null;
-  let indices = null;
-  let imgData = null;
-
-  const camController = new CameraController(canvas);
+  const camController = new CameraController(gl.canvas);
 
   const primSelect = document.getElementById("geometric-primitive-select");
   const colorChSelect = document.getElementById("color-channel-select");
 
   let selectedPrimitive = primSelect.selectedOptions[0].value;
   let selectedColorChannel = colorChSelect.selectedOptions[0].value;
+
+  let positions = null;
+  let colors = null;
+  let indices = null;
+  let imgData = null;
 
   camController.onchange = () => {
     requestAnimationFrame(() => {
@@ -156,7 +156,7 @@ function main() {
       }
     }
 
-    [center, radius] = boundingSphere(unflattenedPositions);
+    ({ center, radius } = boundingSphere(unflattenedPositions));
 
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, positions, gl.DYNAMIC_DRAW);
@@ -414,7 +414,7 @@ function boundingSphere(points) {
     }
   }
 
-  return [center, radius];
+  return { center: center, radius: radius };
 }
 
 function midpoint(a, b) {
@@ -426,10 +426,11 @@ function midpoint(a, b) {
 }
 
 function draw(gl, extOesElementIndexUint, projectionUniformLoc, modelViewUniformLoc, indexBuffer, camController, selectedPrimitive, indices) {
+  glutil.resizeCanvasToClientSize(gl.canvas);
   gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-  const perspectiveMatrix = glutil.perspective(45.0, 640.0 / 480.0, 0.01, 10000.0);
+  const perspectiveMatrix = glutil.perspective(45.0, gl.canvas.clientWidth / gl.canvas.clientHeight, 1, 10000.0);
 
   const eyeDist = radius / Math.tan(45.0 / 2.0 * (Math.PI / 180.0));
   const eye = [center[0], center[1], center[2] - eyeDist];
