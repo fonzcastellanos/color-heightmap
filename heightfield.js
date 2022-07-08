@@ -430,7 +430,7 @@ function draw(gl, extOesElementIndexUint, projectionUniformLoc, modelViewUniform
 
   const eyeDist = bsph.radius / Math.tan(45.0 / 2.0 * (Math.PI / 180.0));
   const eye = [bsph.center[0], bsph.center[1], bsph.center[2] - eyeDist];
-  const modelViewMatrix = lookAt(eye, bsph.center, [0, 1, 0]);
+  const modelViewMatrix = glutil.lookAt(eye, bsph.center, [0, 1, 0]);
   mvMatrix = modelViewMatrix;
 
   mvRotate(camController.xRot, [1, 0, 0]);
@@ -443,33 +443,6 @@ function draw(gl, extOesElementIndexUint, projectionUniformLoc, modelViewUniform
   const glPrim = glPrimitive(gl, selectedPrimitive);
   const glType = extOesElementIndexUint ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT;
   gl.drawElements(glPrim, indices.length, glType, 0);
-}
-
-function lookAt(eye, at, up) {
-  const n = vec3.subtract(eye, at);
-  vec3.normalize(n);
-
-  const u = vec3.cross(up, n)
-  vec3.normalize(u);
-
-  const v = vec3.cross(n, u);
-  vec3.normalize(v);
-
-  const rotation = [
-    u[0], v[0], n[0], 0,
-    u[1], v[1], n[1], 0,
-    u[2], v[2], n[2], 0,
-    0, 0, 0, 1
-  ];
-
-  const translation = [
-    1, 0, 0, 0,
-    0, 1, 0, 0,
-    0, 0, 1, 0,
-    -eye[0], -eye[1], -eye[2], 1
-  ];
-
-  return matrix4.multiply(rotation, translation);
 }
 
 function multMatrix(m) {
