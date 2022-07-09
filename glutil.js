@@ -15,7 +15,7 @@ export function perspective(fovy, aspect, near, far) {
   const bottom = -top;
   const left = bottom * aspect;
   const right = top * aspect;
-  return this.frustum(left, right, bottom, top, near, far);
+  return frustum(left, right, bottom, top, near, far);
 }
 
 export function compileShader(gl, shaderSrc, shaderType) {
@@ -90,7 +90,7 @@ export function createProgramFromShaders(gl, vertexShader, fragmentShader) {
 }
 
 export function createProgramFromShaderSources(gl, vertexShaderSrc, fragmentShaderSrc) {
-  const vs = this.compileShader(gl, vertexShaderSrc, gl.VERTEX_SHADER);
-  const fs = this.compileShader(gl, fragmentShaderSrc, gl.FRAGMENT_SHADER);
-  return this.createProgramFromShaders(gl, vs, fs);
+  const vs = compileShader(gl, vertexShaderSrc, gl.VERTEX_SHADER);
+  const fs = compileShader(gl, fragmentShaderSrc, gl.FRAGMENT_SHADER);
+  return createProgramFromShaders(gl, vs, fs);
 }
