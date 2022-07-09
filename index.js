@@ -1,7 +1,7 @@
 import * as heightfield from "./heightfield.js";
 
 window.onload = () => {
-  heightfield.main(
+  heightfield.setup(
     "gl-canvas",
     "file-input",
     "geometric-primitive-select",

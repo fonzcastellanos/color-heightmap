@@ -41,7 +41,7 @@ function glPrimitive(gl, selectedPrimitive) {
   return null;
 }
 
-export function main(
+export function setup(
   canvasElId,
   fileInputElId,
   primitiveSelectElId,
