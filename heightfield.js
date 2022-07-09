@@ -41,10 +41,39 @@ function glPrimitive(gl, selectedPrimitive) {
   return null;
 }
 
-function main() {
-  const canvas = document.getElementById("gl-canvas");
+export function main(
+  canvasElId,
+  fileInputElId,
+  primitiveSelectElId,
+  colorChannelSelectElId
+) {
+  const canvas = document.getElementById(canvasElId);
   if (canvas == null) {
-    console.error("Failed to get canvas with id \"gl-canvas\".");
+    console.error(`Failed to get canvas with id \"${canvasElId}\".`);
+    return;
+  }
+
+  const finput = document.getElementById(fileInputElId);
+  if (finput == null) {
+    console.error(
+      `Failed to get file input element with id \"${fileInputElId}\".`
+    );
+    return;
+  }
+
+  const primSelect = document.getElementById(primitiveSelectElId);
+  if (primSelect == null) {
+    console.error(
+      `Failed to get primitive select element with id \"${primitiveSelectElId}\".`
+    );
+    return;
+  }
+
+  const colorChSelect = document.getElementById(colorChannelSelectElId);
+  if (colorChSelect == null) {
+    console.error(
+      `Failed to get color channel select element with id \"${colorChannelSelectElId}\".`
+    );
     return;
   }
 
@@ -86,9 +115,6 @@ function main() {
   const modelViewUniformLoc = gl.getUniformLocation(program, "u_model_view");
 
   const camController = new CameraController(gl.canvas);
-
-  const primSelect = document.getElementById("geometric-primitive-select");
-  const colorChSelect = document.getElementById("color-channel-select");
 
   let selectedPrimitive = primSelect.selectedOptions[0].value;
   let selectedColorChannel = colorChSelect.selectedOptions[0].value;
@@ -188,7 +214,6 @@ function main() {
     img.src = evt.target.result;
   });
 
-  const finput = document.getElementById("file-input");
   finput.addEventListener("change", (evt) => {
     const f = evt.target.files[0];
     freader.readAsDataURL(f);
@@ -465,5 +490,3 @@ function draw(
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
   gl.drawElements(glPrim, indices.length, glType, 0);
 }
-
-window.onload = main;

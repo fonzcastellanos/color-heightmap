@@ -1,5 +1,16 @@
 {
+  "name": "image_heightfield",
+  "version": "0.1.0",
+  "description": "An image heightfield. The height is dictated by the selected color channel of the provided image.",
+  "license": "MIT",
+  "author": "Alfonso Castellanos",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fonzcastellanos/image_heightfield.git"
+  },
+  "main": "heightfield.js",
   "devDependencies": {
     "node-static": "^0.7.11"
-  }
+  },
+  "private": true
 }
