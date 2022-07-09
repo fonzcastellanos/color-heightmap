@@ -1,4 +1,7 @@
-"use strict";
+import * as vec3 from "./vec3.js";
+import * as matrix4 from "./matrix4.js";
+import * as glutil from "./glutil.js";
+import { CameraController } from "./cameracontroller.js";
 
 const VERTEX_SHADER_SRC = `
 attribute vec3 a_position;
@@ -462,3 +465,5 @@ function draw(
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
   gl.drawElements(glPrim, indices.length, glType, 0);
 }
+
+window.onload = main;

@@ -43,7 +43,7 @@
 // more precise -- only opaque pixels will be considered as the start
 // of a drag action.
 
-function CameraController(element, opt_canvas, opt_context) {
+export function CameraController(element, opt_canvas, opt_context) {
     var controller = this;
     this.onchange = null;
     this.xRot = 0;
@@ -177,5 +177,3 @@ function CameraController(element, opt_canvas, opt_context) {
     element.addEventListener("touchend", touchEnd, false);
     element.addEventListener("touchcancel", touchEnd, false);
 }
-
-
