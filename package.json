@@ -1,12 +1,12 @@
 {
-  "name": "image_heightfield",
+  "name": "color-heightmap",
   "version": "0.1.0",
-  "description": "An image heightfield. The height is dictated by the selected color channel of the provided image.",
+  "description": "Renders color heightmaps of images.",
   "license": "MIT",
   "author": "Alfonso Castellanos",
   "repository": {
     "type": "git",
-    "url": "https://github.com/fonzcastellanos/image_heightfield.git"
+    "url": "https://github.com/fonzcastellanos/color-heightmap.git"
   },
   "main": "heightfield.js",
   "devDependencies": {

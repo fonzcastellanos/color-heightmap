@@ -1,37 +1,36 @@
-# Image Heightfield
+# Color Heightmap
 
-This web application renders the heightfield of an input image given a geometric primitive and a color channel, which represents the height
+This is a WebGL-powered application to render the color heightmap of an input image. 
 
-Input Image                | Heightfield
+Input Image                | Heightmap
 :-------------------------:|:-------------------------:
 ![](grass.jpg)  |  ![](heightfield.png)
 
 ## Demo
-You can test the app at https://fonzcastellanos.github.io/image_heightfield/
+Try the app yourself at https://fonzcastellanos.github.io/color-heightmap/.
 
 ## Features
-- Intuitive camera control with mouse
-- Maps a RGB color channel to height
-- Renders with various geometric primitives
-  - Triangle strips
-  - Triangles
-  - Lines
-  - Points
-- Orients camera using parameters derived from [Ritter's bounding sphere algorithm](https://en.wikipedia.org/wiki/Bounding_sphere#Ritter.27s_bounding_sphere)
+- Configurable height channel
+  - Height channel is one of the channels of the RGB color model
+- Configurable interpretation of vertex streams
+  - Vertex streams are interpreted as one of the following geometric primitives:
+    - Triangle strips
+    - Triangles
+    - Lines
+    - Points
+- Automatic camera positioning and orientation 
+  - Achieved using the radius and center of the heightmap's bounding sphere, which is found by an implementation of Ritter's bounding sphere algorithm
+- Intuitive mouse-based camera control
 
 ## Limitations
-- Performance is not optimized for large images
-- The WebGL extension for 32-bit unsigned integer (uint) indices may not be available on some platforms and thus relatively large images may not be properly rendered. If the extension is indeed not available, the program defaults to 16-bit uint indices, which is supported by WebGL 1.0
-- Among the geometric primitives, lines and triangle strips usually achieve the slowest and fastest rendering speeds, respectively
-
-## Built With
-- [WebGL](https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API) - JavaScript API for rendering interactive 3D and 2D graphics
+- Performance is an issue for large images. I intend to implement downscaling in the future.
+- Camera view is awkward for some orientations of the heightmap achieved through mouse-based camera control.
 
 ## Author
 Alfonso Castellanos
 
 ## License
-MIT @ [Alfonso Castellanos](https://github.com/TrulyFonz)
+MIT @ [Alfonso Castellanos](https://github.com/fonzcastellanos)
 
 ## Acknowledgements
-Khronos Group and Google for their [camera controller module](https://github.com/KhronosGroup/WebGL/blob/master/sdk/demos/google/resources/cameracontroller.js)
+Khronos Group and Google for their [camera controller module](https://github.com/KhronosGroup/WebGL/blob/master/sdk/demos/google/resources/cameracontroller.js).
