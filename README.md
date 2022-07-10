@@ -4,7 +4,7 @@ This is a WebGL-powered application to render the color heightmap of an input im
 
 Input Image                | Heightmap
 :-------------------------:|:-------------------------:
-![](grass.jpg)  |  ![](heightfield.png)
+![](grass.jpg)  |  ![](heightmap.png)
 
 ## Demo
 Try the app yourself at https://fonzcastellanos.github.io/color-heightmap/.
