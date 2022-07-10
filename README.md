@@ -25,6 +25,7 @@ Try the app yourself at https://fonzcastellanos.github.io/color-heightmap/.
 ## Limitations
 - Performance is an issue for large images. I intend to implement downscaling in the future.
 - Camera view is awkward for some orientations of the heightmap achieved through mouse-based camera control.
+- Targets browsers supporting ECMAScript 2015.
 
 ## Author
 Alfonso Castellanos
