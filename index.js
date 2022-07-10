@@ -1,4 +1,4 @@
-import * as heightfield from "./heightfield.js";
+import * as heightfield from "./lib/index.js";
 
 window.onload = () => {
   heightfield.setup(
