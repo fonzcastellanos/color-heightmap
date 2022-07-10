@@ -2,36 +2,44 @@
 <html lang="en">
 
 <head>
-  <title>WebGL Heightfield</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Color heightmap</title>
   <link rel="stylesheet" href="style.css">
   <script type="module" src="index.js"></script>
 </head>
 
 <body>
-  <header>
-    <h1>WebGL Heightfield</h1>
-  </header>
-  <div>
-    <canvas id="gl-canvas">
-      Your browser doesn't appear to support the <code>&lt;canvas&gt;</code> element.
-    </canvas>
-  </div>
-  <div>
-    <label for="geometric-primitive-select">Geometric Primitive</label>
-    <select id="geometric-primitive-select">
-      <option value="triangle-strips" selected>triangle strips</option>
-      <option value="triangles">triangles</option>
-      <option value="lines">lines</option>
-      <option value="points">points</option>
-    </select>
-    <label for="color-channel-select">Color Channel</label>
-    <select id="color-channel-select">
-      <option value="red" selected>red</option>
-      <option value="green">green</option>
-      <option value="blue">blue</option>
-    </select>
-    <input type="file" id="file-input">
-  </div>
+  <main>
+    <article class="container">
+      <header>
+        <h1>Color Heightmap</h1>
+      </header>
+      <canvas id="gl-canvas">
+        Your browser doesn't appear to support the <code>&lt;canvas&gt;</code> element.
+      </canvas>
+      <section class="config-menu">
+        <section class="selectable">
+          <label for="geometric-primitive-select">Geometric primitive</label>
+          <select id="geometric-primitive-select">
+            <option value="triangle-strips" selected>triangle strips</option>
+            <option value="triangles">triangles</option>
+            <option value="lines">lines</option>
+            <option value="points">points</option>
+          </select>
+        </section>
+        <section class="selectable">
+          <label for="color-channel-select">Color channel</label>
+          <select id="color-channel-select">
+            <option value="red" selected>red</option>
+            <option value="green">green</option>
+            <option value="blue">blue</option>
+          </select>
+        </section>
+        <input type="file" id="file-input">
+      </section>
+    </article>
+  </main>
 </body>
 
 </html>

@@ -1,6 +1,38 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+main {
+  margin: 0;
+}
+
+.container {
+  max-width: 768px;
+  margin: 0 auto 0;
+  padding: 0 16px;
+}
+
 canvas {
-  border: 2px solid black;
   background-color: black;
-  width: 640px;
-  height: 480px;
+  width: 100%;
+}
+
+.selectable {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.config-menu {
+  margin: 16px 0;
+  display: flex;
+  flex-flow: row wrap;
+  align-items: flex-end;
+  gap: 24px 32px;
 }
