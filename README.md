@@ -1,5 +1,7 @@
 # Color Heightmap
 
+![License](https://img.shields.io/github/license/fonzcastellanos/color-heightmap)
+
 This is a WebGL-powered application to render the color heightmap of an input image. 
 
 Input Image                | Heightmap
@@ -27,11 +29,8 @@ Try the app yourself at https://fonzcastellanos.github.io/color-heightmap/.
 - Camera view is awkward for some orientations of the heightmap achieved through mouse-based camera control.
 - Targets browsers supporting ECMAScript 2015.
 
-## Author
-Alfonso Castellanos
-
-## License
-MIT @ [Alfonso Castellanos](https://github.com/fonzcastellanos)
-
 ## Acknowledgements
 Khronos Group and Google for their [camera controller module](https://github.com/KhronosGroup/WebGL/blob/master/sdk/demos/google/resources/cameracontroller.js).
+
+## License
+Released under the [MIT](LICENSE.txt) license.
