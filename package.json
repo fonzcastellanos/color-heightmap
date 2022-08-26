@@ -9,8 +9,5 @@
     "url": "https://github.com/fonzcastellanos/color-heightmap.git"
   },
   "main": "lib/index.js",
-  "devDependencies": {
-    "node-static": "^0.7.11"
-  },
   "private": true
 }
